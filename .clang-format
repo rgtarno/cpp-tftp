@@ -1,0 +1,15 @@
+﻿---
+BasedOnStyle: Microsoft
+AlignConsecutiveAssignments: 'true'
+AlignConsecutiveDeclarations: 'true'
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
+ConstructorInitializerIndentWidth: '4'
+CompactNamespaces: 'false'
+NamespaceIndentation: All
+Standard:        Cpp11
+IndentWidth:     2   
+TabWidth:        2   
+UseTab:          Never 
+
+...

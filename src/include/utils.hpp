@@ -18,4 +18,7 @@ namespace utils
     return fmt::format("Unknwon error : {}", errnum);
   }
 
+  std::vector<char> native_to_netascii(const std::vector<char> &data);
+  std::vector<char> netascii_to_native(const std::vector<char> &data);
+
 }; // namespace utils

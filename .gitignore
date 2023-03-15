@@ -4,3 +4,4 @@ deps/*
 *.d
 *.o
 .vscode/*
+*.txt

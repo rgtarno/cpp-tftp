@@ -52,3 +52,38 @@ std::vector<char> utils::netascii_to_native(const std::vector<char> &data)
 
   return ret;
 }
+
+//========================================================
+std::optional<sockaddr_in> utils::to_sockaddr_in(const std::string &addr, const uint16_t port)
+{
+  sockaddr_in sa;
+  std::memset(&sa, 0, sizeof(sockaddr_in));
+  sa.sin_port   = htons(port);
+  sa.sin_family = AF_INET;
+  if (addr.empty())
+  {
+    sa.sin_addr.s_addr = INADDR_ANY;
+  }
+  else
+  {
+    if (!inet_pton(AF_INET, addr.c_str(), &(sa.sin_addr)))
+    {
+      return {};
+    }
+  }
+  return sa;
+}
+
+//========================================================
+std::ostream &operator<<(std::ostream &os, const struct sockaddr_in &sa)
+{
+  char addr_buf[INET_ADDRSTRLEN] = {0};
+  if (inet_ntop(AF_INET, &(sa.sin_addr), addr_buf, INET_ADDRSTRLEN) == NULL)
+  {
+    return os << "unknown:" << htons(sa.sin_port);
+  }
+  else
+  {
+    return os << addr_buf << ":" << htons(sa.sin_port);
+  }
+}

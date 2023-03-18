@@ -1,6 +1,7 @@
 
 #include "tftp_client.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <poll.h>
 
@@ -61,10 +62,11 @@ void tftp_client::get_file(const std::string &filename, const std::string &tftp_
   }
   dbg_trace("Received block {} of {} bytes", data_packet->block_number, data_packet->data.size());
 
-  std::ofstream out_file(filename, std::ios_base::binary);
+  const std::filesystem::path out_filename(filename);
+  std::ofstream               out_file(out_filename.filename(), std::ios_base::binary);
   if (!out_file)
   {
-    dbg_err("Failed to open file for writing '{}'", filename);
+    dbg_err("Failed to open file for writing '{}'", out_filename);
     return;
   }
 

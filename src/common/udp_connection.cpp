@@ -83,6 +83,7 @@ void udp_connection::bind(const std::string &ip_address, const uint16_t port_num
 
   if (::bind(_sd, (const struct sockaddr *)&sa, sizeof(struct sockaddr_in)) < 0)
   {
+    dbg_err("Bind failed");
     throw std::runtime_error(utils::string_error(errno));
   }
 }

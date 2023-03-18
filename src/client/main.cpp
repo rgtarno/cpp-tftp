@@ -115,16 +115,15 @@ int main(int argc, char **argv)
 
   try
   {
-    tftp_client tftp(tftp_host, mode, local_interface);
     for (const auto &file : files)
     {
       if (write_flag)
       {
-        tftp.send_file(file);
+        tftp_client::send_file(file, tftp_host, mode, local_interface);
       }
       else
       {
-        tftp.get_file(file);
+        tftp_client::get_file(file, tftp_host, mode, local_interface);
       }
     }
   }

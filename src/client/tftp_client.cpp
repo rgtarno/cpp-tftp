@@ -9,28 +9,25 @@
 #include "utils.hpp"
 
 //========================================================
-tftp_client::tftp_client(const std::string &tftp_server, const tftp::mode_t mode, const std::string &local_interface) :
-    _server_address(tftp_server), _transfer_mode(mode), _udp()
+void tftp_client::get_file(const std::string &filename, const std::string &tftp_server, const tftp::mode_t mode,
+                           const std::string &local_interface)
 {
-  _udp.bind(local_interface, 0);
-}
+  udp_connection udp;
+  udp.bind(local_interface, 0);
 
-//========================================================
-void tftp_client::get_file(const std::string &filename)
-{
-  const tftp::rw_packet_t request(filename, tftp::packet_t::READ, _transfer_mode);
+  const tftp::rw_packet_t request(filename, tftp::packet_t::READ, mode);
   const auto              request_data = tftp::serialise_rw_packet(request);
 
-  _udp.send_to(_server_address, 69, request_data);
-  dbg_dbg("Sent request to {}:{} to read file '{}'", _server_address, 63, filename);
+  udp.send_to(tftp_server, 69, request_data);
+  dbg_dbg("Sent request to {}:{} to read file '{}'", tftp_server, 69, filename);
 
   pollfd pfd = {
-      .fd      = _udp.sd(),
+      .fd      = udp.sd(),
       .events  = POLLOUT,
       .revents = 0,
   };
 
-  if (!poll(&pfd, 1, 3000) || !(pfd.revents & POLLOUT))
+  if ((poll(&pfd, 1, 3000) <= 0) || !(pfd.revents & POLLOUT))
   {
     dbg_warn("Did not receive reply to read request");
     return;
@@ -39,8 +36,9 @@ void tftp_client::get_file(const std::string &filename)
   std::string addr;
   uint16_t    server_tid        = 0;
   uint16_t    block_number      = 1;
-  const auto  first_packet_data = _udp.recv_from(addr, server_tid, tftp::DATA_PKT_MAX_SIZE);
+  const auto  first_packet_data = udp.recv_from(addr, server_tid, tftp::DATA_PKT_MAX_SIZE);
   auto        data_packet       = tftp::deserialise_data_packet(first_packet_data);
+  dbg_dbg("Server tid is {}", server_tid);
 
   if (!data_packet)
   {
@@ -71,7 +69,7 @@ void tftp_client::get_file(const std::string &filename)
   }
 
   dbg_trace("Server tid is {}", server_tid);
-  _udp.connect(_server_address, server_tid);
+  udp.connect(tftp_server, server_tid);
 
   tftp::ack_packet_t ack(block_number);
 
@@ -79,7 +77,7 @@ void tftp_client::get_file(const std::string &filename)
   while (!finished)
   {
     dbg_trace("Sending ack to block {}", block_number);
-    _udp.send(tftp::serialise_ack_packet(ack));
+    udp.send(tftp::serialise_ack_packet(ack));
     ack.block_number = ++block_number;
 
     if (request.mode == tftp::mode_t::NETASCII)
@@ -105,7 +103,7 @@ void tftp_client::get_file(const std::string &filename)
       return;
     }
 
-    data_packet = tftp::deserialise_data_packet(_udp.recv(tftp::DATA_PKT_MAX_SIZE));
+    data_packet = tftp::deserialise_data_packet(udp.recv(tftp::DATA_PKT_MAX_SIZE));
 
     if (!data_packet)
     {
@@ -123,16 +121,20 @@ void tftp_client::get_file(const std::string &filename)
 }
 
 //========================================================
-void tftp_client::send_file(const std::string &filename)
+void tftp_client::send_file(const std::string &filename, const std::string &tftp_server, const tftp::mode_t mode,
+                            const std::string &local_interface)
 {
-  const tftp::rw_packet_t request(filename, tftp::packet_t::WRITE, _transfer_mode);
+  udp_connection udp;
+  udp.bind(local_interface, 0);
+
+  const tftp::rw_packet_t request(filename, tftp::packet_t::WRITE, mode);
   const auto              request_data = tftp::serialise_rw_packet(request);
 
-  _udp.send_to(_server_address, 69, request_data);
-  dbg_dbg("Sent request to {}:{} to write file '{}'", _server_address, 63, filename);
+  udp.send_to(tftp_server, 69, request_data);
+  dbg_dbg("Sent request to {}:{} to write file '{}'", tftp_server, 63, filename);
 
   pollfd pfd = {
-      .fd      = _udp.sd(),
+      .fd      = udp.sd(),
       .events  = POLLOUT,
       .revents = 0,
   };
@@ -146,7 +148,7 @@ void tftp_client::send_file(const std::string &filename)
   std::string addr;
   uint16_t    server_tid        = 0;
   uint16_t    block_number      = 0;
-  const auto  first_packet_data = _udp.recv_from(addr, server_tid, tftp::DATA_PKT_MAX_SIZE);
+  const auto  first_packet_data = udp.recv_from(addr, server_tid, tftp::DATA_PKT_MAX_SIZE);
   auto        ack_packet        = tftp::deserialise_ack_packet(first_packet_data);
   if (!ack_packet)
   {
@@ -170,7 +172,7 @@ void tftp_client::send_file(const std::string &filename)
   ++block_number;
 
   dbg_trace("Server tid is {}", server_tid);
-  _udp.connect(_server_address, server_tid);
+  udp.connect(tftp_server, server_tid);
 
   tftp::data_packet_t data_packet;
   data_packet.block_number = block_number;
@@ -211,7 +213,7 @@ void tftp_client::send_file(const std::string &filename)
       dbg_trace("Sending data packet, block {}", block_number);
     }
 
-    _udp.send(tftp::serialise_data_packet(data_packet));
+    udp.send(tftp::serialise_data_packet(data_packet));
     data_packet.block_number = ++block_number;
 
     // Read in block before we wait for ACK
@@ -235,7 +237,7 @@ void tftp_client::send_file(const std::string &filename)
       return;
     }
 
-    ack_packet = tftp::deserialise_ack_packet(_udp.recv(tftp::ACK_PKT_MAX_SIZE));
+    ack_packet = tftp::deserialise_ack_packet(udp.recv(tftp::ACK_PKT_MAX_SIZE));
     if (!ack_packet)
     {
       dbg_err("Failed to parse ack packet at block number {}", block_number);

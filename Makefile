@@ -13,7 +13,7 @@ CXXFLAGS:=-std=c++17 -Wall -Wextra -Werror -Wswitch-enum -Wshadow -Woverloaded-v
 INCLUDE:=-Isrc/include/
 
 ifeq ($(VERSION),release)
-CXXFLAGS+= -O2 -DNDEBUG
+CXXFLAGS+= -O2 -DNDEBUG -DRELEASE
 else
 ifeq ($(VERSION),debug)
 CXXFLAGS+= -ggdb -g
@@ -42,7 +42,6 @@ $(APP_DIR)/$(CLIENT): $(CLIENT_OBJECTS)
 
 $(APP_DIR)/$(SERVER): $(SERVER_OBJECTS)
 	@mkdir -p $(@D)
-	@echo "Version = $(VERSION)"
 	@$(CXX) $(CXXFLAGS) $(INCLUDE) -o $(APP_DIR)/$(SERVER) $^ $(LDLAGS)
 	@echo  "\033[32mBUILT: $@\033[0m"
 

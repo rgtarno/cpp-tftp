@@ -87,3 +87,10 @@ std::ostream &operator<<(std::ostream &os, const struct sockaddr_in &sa)
     return os << addr_buf << ":" << htons(sa.sin_port);
   }
 }
+
+//========================================================
+bool utils::is_subpath(const std::filesystem::path &path, const std::filesystem::path &base)
+{
+  auto mismatch_pair = std::mismatch(path.begin(), path.end(), base.begin(), base.end());
+  return mismatch_pair.second == base.end();
+}

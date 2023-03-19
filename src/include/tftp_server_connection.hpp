@@ -1,6 +1,7 @@
 #pragma once
 
 #include <arpa/inet.h>
+#include <optional>
 #include <stdio.h>
 #include <string>
 
@@ -10,8 +11,7 @@
 class tftp_server_connection
 {
 public:
-  tftp_server_connection(const std::string &server_root, const tftp::rw_packet_t &request,
-                         struct sockaddr_in &client_address);
+  tftp_server_connection(const tftp::rw_packet_t &request, struct sockaddr_in &client_address);
   ~tftp_server_connection();
   tftp_server_connection()                                          = delete;
   tftp_server_connection(const tftp_server_connection &)            = delete;
@@ -39,14 +39,16 @@ public:
   };
 
 private:
-  udp_connection      _udp;
-  struct sockaddr_in  _client;
-  std::string         _server_root;
-  tftp::rw_packet_t   _request;
-  tftp::data_packet_t _data_pkt;
-  bool                _finished;
-  bool                _pkt_ready;
-  FILE               *_fd;
-  state_t             _state;
-  uint16_t            _block_number;
+  udp_connection       _udp;
+  struct sockaddr_in   _client;
+  tftp::data_packet_t  _data_pkt;
+  tftp::error_packet_t _error_pkt;
+  bool                 _finished;
+  bool                 _pkt_ready;
+  FILE                *_fd;
+  state_t              _state;
+  uint16_t             _block_number;
+
+  std::optional<tftp::error_packet_t> is_operation_allowed(const std::string   &file_request,
+                                                           const tftp::packet_t type) const;
 };

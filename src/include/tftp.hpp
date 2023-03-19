@@ -27,6 +27,20 @@ namespace tftp
     OCTET
   };
 
+  enum class error_t : uint16_t
+  {
+    NOT_DEFINED,
+    FILE_NOT_FOUND,
+    ACCESS_ERROR,
+    DISK_FULL,
+    ILLEGAL_OPERATION,
+    UNKNOWN_TID,
+    FILE_EXISTS,
+    NO_USER
+  };
+
+  std::string error_code_to_string(const error_t err);
+
   struct rw_packet_t
   {
     rw_packet_t() : type(packet_t::READ), filename(""), mode(mode_t::OCTET){};
@@ -52,6 +66,8 @@ namespace tftp
   struct error_packet_t
   {
     error_packet_t() : error_msg(""), error_code(0){};
+    error_packet_t(const error_t code, const std::string &msg) :
+        error_msg(msg), error_code(static_cast<uint16_t>(code)){};
     std::string error_msg;
     uint16_t    error_code;
   };

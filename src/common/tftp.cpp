@@ -81,7 +81,8 @@ std::optional<tftp::data_packet_t> tftp::deserialise_data_packet(const std::vect
     return {};
   }
 
-  packet.block_number = (static_cast<uint16_t>(data.at(2)) << 8) | static_cast<uint16_t>(data.at(3));
+  packet.block_number =
+      (static_cast<uint16_t>((unsigned char)data.at(2)) << 8) | static_cast<uint16_t>((unsigned char)data.at(3));
   packet.data.assign(data.begin() + 4, data.end());
   return packet;
 }
@@ -106,7 +107,8 @@ std::optional<tftp::ack_packet_t> tftp::deserialise_ack_packet(const std::vector
   {
     return {};
   }
-  const uint16_t block_num = (static_cast<uint16_t>(data.at(2)) << 8) | static_cast<uint16_t>(data.at(3));
+  const uint16_t block_num =
+      (static_cast<uint16_t>((unsigned char)data.at(2)) << 8) | static_cast<uint16_t>((unsigned char)data.at(3));
   return ack_packet_t(block_num);
 }
 
@@ -117,7 +119,7 @@ std::vector<char> tftp::serialise_error_packet(const error_packet_t &packet)
   std::vector<char> ret;
   ret.reserve(packet_size);
   ret.push_back(0);
-  ret.push_back(static_cast<char>(packet_t::READ));
+  ret.push_back(static_cast<char>(packet_t::ERROR));
   ret.push_back(packet.error_code >> 8);
   ret.push_back(packet.error_code & 0xFF);
   ret.insert(ret.end(), packet.error_msg.begin(), packet.error_msg.end());
@@ -177,4 +179,38 @@ std::string tftp::mode_t_to_string(const tftp::mode_t mode)
     return std::string("UNKNOWN");
   }
   }
+}
+
+//========================================================
+std::string tftp::error_code_to_string(const tftp::error_t err)
+{
+  switch (err)
+  {
+  default:
+  case error_t::NOT_DEFINED: {
+    return std::string("Not defined");
+  }
+  case error_t::FILE_NOT_FOUND: {
+    return std::string("File not found");
+  }
+  case error_t::ACCESS_ERROR: {
+    return std::string("Access violation");
+  }
+  case error_t::DISK_FULL: {
+    return std::string("Disk full or allocation exceeded");
+  }
+  case error_t::ILLEGAL_OPERATION: {
+    return std::string("Illegal TFTP operation");
+  }
+  case error_t::UNKNOWN_TID: {
+    return std::string("Unknown transfer ID");
+  }
+  case error_t::FILE_EXISTS: {
+    return std::string("File already exists");
+  }
+  case error_t::NO_USER: {
+    return std::string("No such user");
+  }
+  }
+  return std::string("");
 }

@@ -77,7 +77,7 @@ void tftp_server::start()
         {
           auto new_request = _conn_handler.get_request();
           dbg_trace("Accepting new connection from client {}", new_request.client);
-          _client_connections.emplace_back(_server_root, new_request.request, new_request.client);
+          _client_connections.emplace_back(new_request.request, new_request.client);
           const uint32_t epoll_events = _client_connections.back().wait_for_read() ? EPOLLIN : EPOLLOUT;
           epoll_ctl_add(_client_connections.back().sd(), epoll_events, &_client_connections.back());
         }

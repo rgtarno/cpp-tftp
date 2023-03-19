@@ -6,6 +6,44 @@
 
 static tftp_server *_pserver = nullptr;
 
+void sig_handler(int signum);
+void setup_signal_handlers();
+void print_usage(char *argv0);
+void initialise_logger();
+
+//==========================================================
+int main(int argc, char **argv)
+{
+  setup_signal_handlers();
+  initialise_logger();
+
+  if (argc < 3)
+  {
+    print_usage(argv[0]);
+    return 1;
+  }
+
+  const std::string server_root(argv[1]);
+  const std::string interface(argv[2]);
+
+  try
+  {
+    tftp_server server(server_root, interface, 5);
+    _pserver = &server;
+
+    dbg_trace("Starting server");
+    server.start();
+  }
+  catch (const std::exception &e)
+  {
+    dbg_err("Server failed : {}", e.what());
+    return 1;
+  }
+
+  dbg_trace("Exit now");
+  return 0;
+}
+
 //==========================================================
 void sig_handler(int signum)
 {
@@ -31,34 +69,16 @@ void setup_signal_handlers()
 }
 
 //==========================================================
-int main(int argc, char **argv)
+void print_usage(char *argv0)
 {
-  setup_signal_handlers();
+  fmt::print("Usage: {} [SERVER_ROOT] [INTERFACE]\n", argv0);
+}
 
+//==========================================================
+void initialise_logger()
+{
+  spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
   auto err_logger = spdlog::stderr_color_mt("console");
   spdlog::set_level(spdlog::level::trace);
   dbg_dbg("Initialised log");
-
-  if (argc < 2)
-  {
-    dbg_err("Require server root as 1st argument");
-    return 1;
-  }
-
-  try
-  {
-    tftp_server server(argv[1], 5);
-    _pserver = &server;
-
-    dbg_trace("Starting server");
-    server.start();
-  }
-  catch (const std::exception &e)
-  {
-    dbg_err("Server failed : {}", e.what());
-    return 1;
-  }
-
-  dbg_trace("Exit now");
-  return 0;
 }

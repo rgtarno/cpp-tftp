@@ -212,7 +212,7 @@ void tftp_server_connection::handle_write()
       }
       else
       {
-        dbg_info("Created data packet block {}", _block_number);
+        dbg_trace("Created data packet block {} [{}]", _block_number, _client);
       }
 
       _data_pkt.block_number = _block_number;
@@ -228,13 +228,13 @@ void tftp_server_connection::handle_write()
     }
     else if (ret > 0)
     {
-      dbg_info("Sent data packet block {}", _block_number);
+      dbg_trace("Sent data packet block {} [{}]", _block_number, _client);
       _pkt_ready = false;
       _state     = state_t::WAIT_FOR_ACK;
     }
     else
     {
-      dbg_info("Send for data packet block {} not ready for client {}", _block_number, _client);
+      dbg_trace("Send for data packet block {} not ready for client {}", _block_number, _client);
     }
     break;
   }
@@ -249,7 +249,7 @@ void tftp_server_connection::handle_write()
     }
     else if (ret > 0)
     {
-      dbg_info("Sent ack packet block {}", _block_number);
+      dbg_trace("Sent ack packet block {}[{}]", _block_number, _client);
       ++_block_number;
       _state = state_t::WAIT_FOR_DATA;
       if (_fd == NULL)
@@ -295,7 +295,7 @@ std::optional<tftp::error_packet_t> tftp_server_connection::is_operation_allowed
   const auto canonical_filepath    = std::filesystem::weakly_canonical(filepath);
   const auto canonical_server_root = std::filesystem::absolute(std::filesystem::current_path());
 
-  dbg_trace("Checking if requested file : {} is withing server root {}", canonical_filepath, canonical_server_root);
+  dbg_trace("Checking if requested file : {} is within server root {}", canonical_filepath, canonical_server_root);
 
   if (!utils::is_subpath(canonical_filepath, canonical_server_root))
   {

@@ -20,6 +20,11 @@ std::vector<char> utils::native_to_netascii(const std::vector<char> &data)
       ret.push_back(CR);
       ret.push_back(LF);
     }
+    else if (c == CR)
+    {
+      ret.push_back(CR);
+      ret.push_back(0);
+    }
     else
     {
       ret.push_back(c);
@@ -38,15 +43,24 @@ std::vector<char> utils::netascii_to_native(const std::vector<char> &data)
   ret.reserve(data.size());
 
   // TODO: make this more efficient
-  for (const auto &c : data)
+  for (auto iter = data.cbegin(); iter != data.cend(); ++iter)
   {
-    if (c == CR)
+    if (*iter == CR)
     {
-      continue;
+      if (std::next(iter) != data.cend())
+      {
+        const auto next = *std::next(iter);
+        if (next == 0) // CR NULL to CR
+        {
+          ret.push_back(*iter);
+          ++iter;
+        }
+        // CR LF to LF
+      }
     }
     else
     {
-      ret.push_back(c);
+      ret.push_back(*iter);
     }
   }
 

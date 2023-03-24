@@ -2,10 +2,11 @@
 
 #include <arpa/inet.h>
 #include <optional>
-#include <stdio.h>
 #include <string>
 
 #include "tftp.hpp"
+#include "tftp_read_file.hpp"
+#include "tftp_write_file.hpp"
 #include "udp_connection.hpp"
 
 class tftp_server_connection
@@ -40,12 +41,14 @@ public:
 
 private:
   udp_connection       _udp;
+  tftp_read_file       _file_reader;
+  tftp_write_file      _file_writer;
   struct sockaddr_in   _client;
   tftp::data_packet_t  _data_pkt;
   tftp::error_packet_t _error_pkt;
   bool                 _finished;
+  bool                 _final_ack;
   bool                 _pkt_ready;
-  FILE                *_fd;
   state_t              _state;
   uint16_t             _block_number;
 

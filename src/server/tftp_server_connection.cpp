@@ -9,12 +9,14 @@
 //========================================================
 tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request, struct sockaddr_in &client_address) :
     _udp(),
+    _file_reader(),
+    _file_writer(),
     _client(client_address),
     _data_pkt(),
     _error_pkt(),
     _finished(false),
+    _final_ack(false),
     _pkt_ready(false),
-    _fd(NULL),
     _state(state_t::ERROR),
     _block_number(0)
 
@@ -29,12 +31,6 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
     _error_pkt = error.value();
     _state     = state_t::ERROR;
   }
-  else if (request.mode != tftp::mode_t::OCTET)
-  {
-    dbg_warn("Received NETASCII request from {}, which is not supported", _client);
-    _error_pkt = tftp::error_packet_t(tftp::error_t::ILLEGAL_OPERATION, "Netascii and mail modes are not supported");
-    _state     = state_t::ERROR;
-  }
   else
   {
     _data_pkt.data.resize(512);
@@ -45,10 +41,13 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
       dbg_trace("Connection created for request to READ '{}' by client [{}]", request.filename, _client);
       _state        = state_t::SEND_DATA;
       _block_number = 1;
-      _fd           = fopen(request.filename.c_str(), "r");
-      if (_fd == NULL)
+      try
       {
-        dbg_err("Failed to open file '{}' for reading [{}]", request.filename, _client);
+        _file_reader.open(request.filename, request.mode);
+      }
+      catch (const std::exception &err)
+      {
+        dbg_err("Failed to open file '{}' for reading [{}] : ", request.filename, _client, err.what());
         _error_pkt = tftp::error_packet_t(tftp::error_t::ACCESS_ERROR, "Failed to open file for reading");
         _state     = state_t::ERROR;
       }
@@ -58,10 +57,13 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
       dbg_trace("Connection created for request to WRITE '{}' by client [{}]", request.filename, _client);
       _state        = state_t::SEND_ACK;
       _block_number = 0;
-      _fd           = fopen(request.filename.c_str(), "w");
-      if (_fd == NULL)
+      try
       {
-        dbg_err("Failed to open file '{}' for writing [{}]", request.filename, _client);
+        _file_writer.open(request.filename, request.mode);
+      }
+      catch (const std::exception &err)
+      {
+        dbg_err("Failed to open file '{}' for writing [{}] : ", request.filename, _client, err.what());
         _error_pkt = tftp::error_packet_t(tftp::error_t::ACCESS_ERROR, "Failed to open file for writing");
         _state     = state_t::ERROR;
       }
@@ -80,13 +82,7 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
 }
 
 //========================================================
-tftp_server_connection::~tftp_server_connection()
-{
-  if (_fd != NULL)
-  {
-    fclose(_fd);
-  }
-}
+tftp_server_connection::~tftp_server_connection() = default;
 
 //========================================================
 int tftp_server_connection::sd() const
@@ -123,7 +119,8 @@ void tftp_server_connection::handle_read()
   switch (_state)
   {
   case state_t::WAIT_FOR_ACK: {
-    const auto ack_packet = tftp::deserialise_ack_packet(_udp.recv(tftp::ACK_PKT_MAX_SIZE));
+    const auto recv_data  = _udp.recv(tftp::ACK_PKT_MAX_SIZE);
+    const auto ack_packet = tftp::deserialise_ack_packet(recv_data);
     if (ack_packet)
     {
       if (ack_packet->block_number != _block_number)
@@ -134,9 +131,25 @@ void tftp_server_connection::handle_read()
       }
       else
       {
+        if (_final_ack)
+        {
+          dbg_trace("Received final ack ({})", _block_number);
+          _finished = true;
+          break;
+        }
         dbg_trace("Received ack to block {}", _block_number);
         _state = state_t::SEND_DATA;
         ++_block_number;
+      }
+    }
+    else
+    {
+      const auto error_packet = tftp::deserialise_error_packet(recv_data);
+      if (error_packet)
+      {
+        dbg_warn("Received error when waiting for ack to block {} from client [{}] : {} - {}", _block_number, _client,
+                 error_packet->error_code, error_packet->error_msg);
+        _finished = true;
       }
     }
     break;
@@ -153,9 +166,10 @@ void tftp_server_connection::handle_read()
       else
       {
         dbg_trace("Received data block {} from {}", _block_number, _client);
-        if (fwrite(data_packet->data.data(), 1, data_packet->data.size(), _fd) < data_packet->data.size())
+        _file_writer.write(data_packet->data);
+        if (_file_writer.error())
         {
-          dbg_err("Short write occued on data block {} from {}", _block_number, _client);
+          dbg_err("Error occued when writing data block {} from {}", _block_number, _client);
           _error_pkt = tftp::error_packet_t(tftp::error_t::NOT_DEFINED, "Internal server error");
           _state     = state_t::ERROR;
           break;
@@ -164,8 +178,7 @@ void tftp_server_connection::handle_read()
         if (data_packet->data.size() < tftp::DATA_PKT_DATA_MAX_SIZE)
         {
           dbg_trace("Received final data block from client {}", _client);
-          fclose(_fd);
-          _fd = NULL;
+          _final_ack = true;
         }
 
         _state = state_t::SEND_ACK;
@@ -192,22 +205,24 @@ void tftp_server_connection::handle_write()
     if (!_pkt_ready)
     {
       const size_t block_size = 512;
-      size_t       read       = 0;
-      while (read < block_size && !feof(_fd))
+      _file_reader.read_in_to(_data_pkt.data, block_size);
+      if (_file_reader.error())
       {
-        read += fread(_data_pkt.data.data(), 1, block_size - read, _fd);
+        dbg_err("Error occued when reading data block {} from {}", _block_number, _client);
+        _error_pkt = tftp::error_packet_t(tftp::error_t::NOT_DEFINED, "Internal server error");
+        _state     = state_t::ERROR;
+        break;
       }
-      if (read < 512 || feof(_fd))
+      else if ((_data_pkt.data.size() < block_size) || _file_reader.eof())
       {
-        dbg_trace("Read last data block {} ({} bytes)", _block_number, read);
-        _data_pkt.data.resize(read);
-        if ((read == 512) != feof(_fd))
+        dbg_trace("Read last data block {} ({} bytes) [{}]", _block_number, _data_pkt.data.size(), _client);
+        if (_data_pkt.data.size() < 512)
         {
-          _finished = true;
+          _final_ack = true;
         }
         else
         {
-          dbg_trace("Ended cleanly on 512");
+          dbg_trace("Ended cleanly on 512 [{}]", _client);
         }
       }
       else
@@ -249,13 +264,15 @@ void tftp_server_connection::handle_write()
     }
     else if (ret > 0)
     {
-      dbg_trace("Sent ack packet block {}[{}]", _block_number, _client);
+      if (_final_ack)
+      {
+        dbg_trace("Sent final ack packet block {} [{}]", _block_number, _client);
+        _finished = true;
+        break;
+      }
+      dbg_trace("Sent ack packet block {} [{}]", _block_number, _client);
       ++_block_number;
       _state = state_t::WAIT_FOR_DATA;
-      if (_fd == NULL)
-      {
-        _finished = true;
-      }
     }
     else
     {

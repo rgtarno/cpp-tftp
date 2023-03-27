@@ -3,6 +3,7 @@ CC=gcc
 
 CLIENT:=tftp_client
 SERVER:=tftp_server
+TEST_BIN:=tests
 BUILD:=./build
 OBJ_DIR:=$(BUILD)/objects
 APP_DIR:=$(BUILD)/apps
@@ -15,9 +16,7 @@ INCLUDE:=-Isrc/include/
 ifeq ($(VERSION),release)
 CXXFLAGS+= -O2 -DNDEBUG -DRELEASE
 else
-ifeq ($(VERSION),debug)
 CXXFLAGS+= -ggdb -g
-endif
 endif
  
 
@@ -30,6 +29,9 @@ CLIENT_OBJECTS:=$(CLIENT_SRCS:%.cpp=$(OBJ_DIR)/%.o)
 SERVER_SRCS := $(wildcard src/server/*.cpp) $(COMMON_SRCS)
 SERVER_OBJECTS:=$(SERVER_SRCS:%.cpp=$(OBJ_DIR)/%.o)
 
+TEST_SRCS := $(wildcard src/tests/*.cpp) $(COMMON_SRCS)
+TEST_OBJECTS:=$(TEST_SRCS:%.cpp=$(OBJ_DIR)/%.o)
+
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
 	@$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
@@ -37,12 +39,17 @@ $(OBJ_DIR)/%.o: %.cpp
 
 $(APP_DIR)/$(CLIENT): $(CLIENT_OBJECTS)
 	@mkdir -p $(@D)
-	@$(CXX) $(CXXFLAGS) $(INCLUDE) -o $(APP_DIR)/$(CLIENT) $^ $(LDLAGS)
+	@$(CXX) $(CXXFLAGS) $(INCLUDE) -o $@ $^ $(LDLAGS)
 	@echo "\033[32mBUILT: $@\033[0m"
 
 $(APP_DIR)/$(SERVER): $(SERVER_OBJECTS)
 	@mkdir -p $(@D)
-	@$(CXX) $(CXXFLAGS) $(INCLUDE) -o $(APP_DIR)/$(SERVER) $^ $(LDLAGS)
+	@$(CXX) $(CXXFLAGS) $(INCLUDE) -o $@ $^ $(LDLAGS)
+	@echo  "\033[32mBUILT: $@\033[0m"
+
+$(APP_DIR)/$(TEST_BIN): $(TEST_OBJECTS)
+	@mkdir -p $(@D)
+	@$(CXX) $(CXXFLAGS) $(INCLUDE) -o $@ $^ $(LDLAGS)
 	@echo  "\033[32mBUILT: $@\033[0m"
 
 # Rules
@@ -51,6 +58,10 @@ build:
 	@mkdir -p $(OBJ_DIR)
 
 $(APP_DIR)/$(TEST_BIN): $(TEST_OBJECTS)
+
+tests: $(APP_DIR)/$(TEST_BIN)
+	@echo Running tests
+	@$(APP_DIR)/$(TEST_BIN)
 
 format:
 	@clang-format-13 -i `find src/ -name *.cpp`

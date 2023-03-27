@@ -33,6 +33,7 @@ public:
   enum class state_t
   {
     SEND_ACK,
+    SEND_OACK,
     SEND_DATA,
     WAIT_FOR_ACK,
     WAIT_FOR_DATA,
@@ -41,6 +42,7 @@ public:
 
 private:
   udp_connection       _udp;
+  const tftp::packet_t _type;
   tftp_read_file       _file_reader;
   tftp_write_file      _file_writer;
   struct sockaddr_in   _client;
@@ -51,6 +53,10 @@ private:
   bool                 _pkt_ready;
   state_t              _state;
   uint16_t             _block_number;
+  size_t               _block_size;
+  tftp::oack_packet_t  _oack_packet;
+
+  void process_options(const std::vector<std::pair<std::string, std::string>> &options);
 
   std::optional<tftp::error_packet_t> is_operation_allowed(const std::string   &file_request,
                                                            const tftp::packet_t type) const;

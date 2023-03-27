@@ -18,7 +18,8 @@ namespace tftp
     WRITE,
     DATA,
     ACK,
-    ERROR
+    ERROR,
+    OACK
   };
 
   enum class mode_t
@@ -43,11 +44,18 @@ namespace tftp
 
   struct rw_packet_t
   {
-    rw_packet_t() : type(packet_t::READ), filename(""), mode(mode_t::OCTET){};
-    rw_packet_t(const std::string &f, const packet_t t, const mode_t m) : type(t), filename(f), mode(m){};
-    packet_t    type;
-    std::string filename;
-    mode_t      mode;
+    rw_packet_t() : type(packet_t::READ), filename(""), mode(mode_t::OCTET), options{} {};
+    rw_packet_t(const std::string &f, const packet_t t, const mode_t m) : type(t), filename(f), mode(m), options{} {};
+    packet_t                                         type;
+    std::string                                      filename;
+    mode_t                                           mode;
+    std::vector<std::pair<std::string, std::string>> options;
+  };
+
+  struct oack_packet_t
+  {
+    oack_packet_t() : options{} {};
+    std::vector<std::pair<std::string, std::string>> options;
   };
 
   struct data_packet_t
@@ -76,11 +84,13 @@ namespace tftp
   std::vector<char> serialise_data_packet(const data_packet_t &packet);
   std::vector<char> serialise_ack_packet(const ack_packet_t &packet);
   std::vector<char> serialise_error_packet(const error_packet_t &packet);
+  std::vector<char> serialise_oack_packet(const oack_packet_t &packet);
 
   std::optional<rw_packet_t>    deserialise_rw_packet(const std::vector<char> &data);
   std::optional<data_packet_t>  deserialise_data_packet(const std::vector<char> &data);
   std::optional<ack_packet_t>   deserialise_ack_packet(const std::vector<char> &data);
   std::optional<error_packet_t> deserialise_error_packet(const std::vector<char> &data);
+  std::optional<oack_packet_t>  deserialise_oack_packet(const std::vector<char> &data);
 
   std::optional<mode_t> string_to_mode_t(std::string mode_str);
   std::string           mode_t_to_string(const mode_t mode);

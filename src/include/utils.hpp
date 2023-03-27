@@ -8,6 +8,7 @@
 #include <optional>
 #include <string.h>
 #include <string>
+#include <vector>
 
 namespace utils
 {
@@ -28,6 +29,10 @@ namespace utils
   std::optional<sockaddr_in> to_sockaddr_in(const std::string &addr, const uint16_t port);
 
   bool is_subpath(const std::filesystem::path &path, const std::filesystem::path &base);
+
+  std::vector<std::string> extract_c_strings_from_buffer(const std::vector<char> &buffer, const size_t offset = 0);
+
+  int get_mtu(const int sd);
 
 }; // namespace utils
 

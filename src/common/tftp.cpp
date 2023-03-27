@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cstring>
 
+#include "utils.hpp"
+
 static char OCTET_MODE_STR[]    = "OCTET";
 static char NETASCII_MODE_STR[] = "NETASCII";
 
@@ -35,27 +37,31 @@ std::optional<tftp::rw_packet_t> tftp::deserialise_rw_packet(const std::vector<c
   }
   packet.type = static_cast<packet_t>(data.at(1));
 
-  const auto first_null = std::find(data.begin() + 2, data.end(), 0);
-  if (first_null == data.end())
+  std::vector<std::string> params = utils::extract_c_strings_from_buffer(data, 2);
+  if (params.size() < 2)
   {
     return {};
   }
-  packet.filename = std::string(data.begin() + 2, first_null);
-
-  const auto second_null = std::find(first_null + 1, data.end(), 0);
-  if (second_null == data.end())
-  {
-    return {};
-  }
-  const auto mode_str = std::string(first_null + 1, second_null);
-  const auto mode     = tftp::string_to_mode_t(mode_str);
-
+  packet.filename = std::move(params[0]);
+  const auto mode = tftp::string_to_mode_t(params[1]);
   if (!mode)
   {
     return {};
   }
   packet.mode = mode.value();
 
+  if ((params.size() % 2) != 0)
+  {
+    // Ignore anything else, options should be in pairs of name & value
+    return packet;
+  }
+
+  for (size_t i = 2; i < params.size(); i += 2)
+  {
+    packet.options.push_back(std::make_pair(std::move(params.at(i)), std::move(params.at(i + 1))));
+    std::transform(packet.options.back().first.begin(), packet.options.back().first.end(),
+                   packet.options.back().first.begin(), ::toupper);
+  }
   return packet;
 }
 
@@ -144,6 +150,57 @@ std::optional<tftp::error_packet_t> tftp::deserialise_error_packet(const std::ve
     return {};
   }
   packet.error_msg = std::string(data.begin() + 4, null);
+  return packet;
+}
+
+//========================================================
+std::vector<char> tftp::serialise_oack_packet(const tftp::oack_packet_t &packet)
+{
+  const size_t packet_size = [&]() {
+    size_t size = 2; // opcode
+    for (const auto &param : packet.options)
+    {
+      size += param.first.size() + 1 + param.second.size() + 1;
+    }
+    return size;
+  }();
+
+  std::vector<char> ret;
+  ret.reserve(packet_size);
+  ret.push_back(0);
+  ret.push_back(static_cast<char>(packet_t::OACK));
+
+  for (const auto &param : packet.options)
+  {
+    ret.insert(ret.end(), param.first.begin(), param.first.end());
+    ret.push_back(0);
+    ret.insert(ret.end(), param.second.begin(), param.second.end());
+    ret.push_back(0);
+  }
+  return ret;
+}
+
+//========================================================
+std::optional<tftp::oack_packet_t> tftp::deserialise_oack_packet(const std::vector<char> &data)
+{
+  if ((data.size() < 2) || (static_cast<packet_t>(data.at(1)) != packet_t::OACK))
+  {
+    return {};
+  }
+
+  oack_packet_t            packet;
+  std::vector<std::string> params = utils::extract_c_strings_from_buffer(data, 2);
+
+  if ((params.size() % 2) != 0)
+  {
+    // Ignore anything else, options should be in pairs of name & value
+    return packet;
+  }
+
+  for (size_t i = 0; i < params.size(); i += 2)
+  {
+    packet.options.push_back(std::make_pair(std::move(params.at(i)), std::move(params.at(i + 1))));
+  }
   return packet;
 }
 

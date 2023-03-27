@@ -2,6 +2,8 @@
 #include "utils.hpp"
 
 #include <algorithm>
+#include <net/if.h>
+#include <sys/ioctl.h>
 
 //========================================================
 std::vector<char> utils::native_to_netascii(const std::vector<char> &data)
@@ -107,4 +109,30 @@ bool utils::is_subpath(const std::filesystem::path &path, const std::filesystem:
 {
   auto mismatch_pair = std::mismatch(path.begin(), path.end(), base.begin(), base.end());
   return mismatch_pair.second == base.end();
+}
+
+//========================================================
+std::vector<std::string> utils::extract_c_strings_from_buffer(const std::vector<char> &buffer, const size_t offset)
+{
+  std::vector<std::string> ret;
+  auto                     start = buffer.begin() + offset;
+  for (auto end = std::find(start, buffer.end(), 0); end != buffer.end(); end = std::find(start, buffer.end(), 0))
+  {
+    ret.emplace_back(start, end);
+    start = std::next(end);
+  }
+  return ret;
+}
+
+//========================================================
+int utils::get_mtu(const int sd)
+{
+  struct ifreq res;
+
+  if (ioctl(sd, SIOCGIFMTU, &res) < 0)
+  {
+    return -1;
+  }
+
+  return res.ifr_mtu;
 }

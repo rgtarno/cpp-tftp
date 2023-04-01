@@ -56,8 +56,7 @@ private:
   size_t               _block_size;
   tftp::oack_packet_t  _oack_packet;
 
-  void process_options(const std::vector<std::pair<std::string, std::string>> &options);
-
+  void                                process_options(const tftp::rw_packet_t &request);
   std::optional<tftp::error_packet_t> is_operation_allowed(const std::string   &file_request,
                                                            const tftp::packet_t type) const;
 };

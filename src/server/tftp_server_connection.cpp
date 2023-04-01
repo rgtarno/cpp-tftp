@@ -9,7 +9,8 @@
 namespace
 {
   static const char BLKSIZE_OPT[] = "BLKSIZE";
-};
+  static const char TSIZE_OPT[]   = "TSIZE";
+}; // namespace
 
 //========================================================
 tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request, struct sockaddr_in &client_address) :
@@ -43,7 +44,7 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
   {
     _data_pkt.data.resize(_block_size);
 
-    process_options(request.options);
+    process_options(request);
 
     switch (request.type)
     {
@@ -113,9 +114,9 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
 tftp_server_connection::~tftp_server_connection() = default;
 
 //========================================================
-void tftp_server_connection::process_options(const std::vector<std::pair<std::string, std::string>> &options)
+void tftp_server_connection::process_options(const tftp::rw_packet_t &request)
 {
-  for (const auto &opt : options)
+  for (const auto &opt : request.options)
   {
     dbg_trace("Processing option '{}' val = '{}'", opt.first, opt.second);
     if (std::strcmp(opt.first.c_str(), BLKSIZE_OPT) == 0)
@@ -147,6 +148,28 @@ void tftp_server_connection::process_options(const std::vector<std::pair<std::st
       catch (const std::exception &err)
       {
         dbg_err("Failed to convert blksize value to int '{}' [{}]", opt.second, _client);
+      }
+    }
+    else if (std::strcmp(opt.first.c_str(), TSIZE_OPT) == 0)
+    {
+      switch (request.type)
+      {
+      case tftp::packet_t::READ: {
+        const size_t FILE_SIZE = utils::get_file_size(request.filename.c_str());
+        _oack_packet.options.push_back(std::make_pair(opt.first, std::to_string(FILE_SIZE)));
+        break;
+      }
+      case tftp::packet_t::WRITE: {
+        dbg_trace("Incoming file '{}' is {} bytes [{}]", request.filename, opt.second, _client);
+        break;
+      }
+      case tftp::packet_t::DATA:
+      case tftp::packet_t::ACK:
+      case tftp::packet_t::OACK:
+      case tftp::packet_t::ERROR:
+      default: {
+        break;
+      }
       }
     }
   }

@@ -51,7 +51,7 @@ void tftp_server::start()
   epoll_ctl_add(_conn_handler.sd(), EPOLLIN, &_conn_handler);
 
   const int   TIMEOUT_MS = 1000;
-  const int   MAX_EVENTS = 10;
+  const int   MAX_EVENTS = _max_clients + 1;
   epoll_event events[MAX_EVENTS];
 
   while (!_exit_requested)

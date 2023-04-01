@@ -7,7 +7,7 @@ TEST_BIN:=tests
 BUILD:=./build
 OBJ_DIR:=$(BUILD)/objects
 APP_DIR:=$(BUILD)/apps
-VERSION?=release
+VERSION?=debug
 
 LDLAGS:=-lm -ldl -lpthread -lspdlog -lfmt
 CXXFLAGS:=-std=c++17 -Wall -Wextra -Werror -Wswitch-enum -Wshadow -Woverloaded-virtual -Wnull-dereference -Wformat=2 -DSPDLOG_COMPILED_LIB
@@ -36,6 +36,9 @@ $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
 	@$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
 	@echo "Compiled: $@"
+
+
+all: server client
 
 $(APP_DIR)/$(CLIENT): $(CLIENT_OBJECTS)
 	@mkdir -p $(@D)
@@ -76,8 +79,6 @@ clean:
 
 client: build $(APP_DIR)/$(CLIENT)
 server: build $(APP_DIR)/$(SERVER)
-
-all: client server
 
 .PHONY:
 

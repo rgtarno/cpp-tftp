@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <net/if.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 
 //========================================================
 std::vector<char> utils::native_to_netascii(const std::vector<char> &data)
@@ -135,4 +136,15 @@ int utils::get_mtu(const int sd)
   }
 
   return res.ifr_mtu;
+}
+
+//========================================================
+size_t utils::get_file_size(const char *fname)
+{
+  struct stat s;
+  if ((fname != nullptr) && !stat(fname, &s))
+  {
+    return s.st_size;
+  }
+  return 0;
 }

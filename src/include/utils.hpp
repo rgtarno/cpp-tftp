@@ -34,6 +34,8 @@ namespace utils
 
   int get_mtu(const int sd);
 
+  size_t get_file_size(const char *fname);
+
 }; // namespace utils
 
 std::ostream &operator<<(std::ostream &os, const struct sockaddr_in &sa);

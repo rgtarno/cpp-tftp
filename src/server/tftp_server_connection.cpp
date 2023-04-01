@@ -16,6 +16,7 @@ namespace
 
 //========================================================
 tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request, struct sockaddr_in &client_address) :
+    _logger(spdlog::get("console")),
     _udp(),
     _type(request.type),
     _file_reader(),
@@ -54,14 +55,14 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
     switch (request.type)
     {
     case tftp::packet_t::READ: {
-      dbg_dbg("Connection created for request to READ '{}' by client [{}]", request.filename, _client);
+      log_debug(_logger, "Connection created for request to READ '{}' by client [{}]", request.filename, _client);
       try
       {
         _file_reader.open(request.filename, request.mode);
       }
       catch (const std::exception &err)
       {
-        dbg_err("Failed to open file '{}' for reading [{}] : ", request.filename, _client, err.what());
+        log_error(_logger, "Failed to open file '{}' for reading [{}] : ", request.filename, _client, err.what());
         _error_pkt = tftp::error_packet_t(tftp::error_t::ACCESS_ERROR, "Failed to open file for reading");
         _state     = state_t::ERROR;
       }
@@ -80,7 +81,7 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
       break;
     }
     case tftp::packet_t::WRITE: {
-      dbg_dbg("Connection created for request to WRITE '{}' by client [{}]", request.filename, _client);
+      log_debug(_logger, "Connection created for request to WRITE '{}' by client [{}]", request.filename, _client);
       if (_oack_packet.options.empty())
       {
         _state = state_t::SEND_ACK;
@@ -96,7 +97,7 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
       }
       catch (const std::exception &err)
       {
-        dbg_err("Failed to open file '{}' for writing [{}] : ", request.filename, _client, err.what());
+        log_error(_logger, "Failed to open file '{}' for writing [{}] : ", request.filename, _client, err.what());
         _error_pkt = tftp::error_packet_t(tftp::error_t::ACCESS_ERROR, "Failed to open file for writing");
         _state     = state_t::ERROR;
       }
@@ -107,7 +108,7 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
     case tftp::packet_t::ERROR:
     case tftp::packet_t::OACK:
     default: {
-      dbg_err("Received unexpected packet type from {}", _client);
+      log_error(_logger, "Received unexpected packet type from {}", _client);
       _error_pkt = tftp::error_packet_t(tftp::error_t::ILLEGAL_OPERATION, "ILLEGAL_OPERATION");
       _state     = state_t::ERROR;
     }
@@ -123,7 +124,7 @@ void tftp_server_connection::process_options(const tftp::rw_packet_t &request)
 {
   for (const auto &opt : request.options)
   {
-    dbg_trace("Processing option '{}' val = '{}'", opt.first, opt.second);
+    log_trace(_logger, "Processing option '{}' val = '{}'", opt.first, opt.second);
     if (std::strcmp(opt.first.c_str(), BLKSIZE_OPT) == 0)
     {
       try
@@ -133,26 +134,26 @@ void tftp_server_connection::process_options(const tftp::rw_packet_t &request)
         const int MTU = utils::get_mtu(_udp.sd());
         if (MTU < 0)
         {
-          dbg_warn("Failed to query MTU [{}]", _client);
+          log_warn(_logger, "Failed to query MTU [{}]", _client);
           _oack_packet.options.push_back(std::make_pair(opt.first, opt.second));
-          dbg_trace("Requested blksize is {} [{}]", _block_size, _client);
+          log_trace(_logger, "Requested blksize is {} [{}]", _block_size, _client);
         }
         else if (MTU < static_cast<int>(_block_size))
         {
           _block_size = MTU;
           _oack_packet.options.push_back(std::make_pair(opt.first, std::to_string(MTU)));
-          dbg_info("Requested blksize is greater than MTU : {} vs {}. Replying with MTU [{}]", _block_size, MTU,
-                   _client);
+          log_info(_logger, "Requested blksize is greater than MTU : {} vs {}. Replying with MTU [{}]", _block_size,
+                   MTU, _client);
         }
         else
         {
           _oack_packet.options.push_back(std::make_pair(opt.first, opt.second));
-          dbg_trace("Requested blksize is {} [{}]", _block_size, _client);
+          log_trace(_logger, "Requested blksize is {} [{}]", _block_size, _client);
         }
       }
       catch (const std::exception &err)
       {
-        dbg_err("Failed to convert blksize value to int '{}' [{}]", opt.second, _client);
+        log_error(_logger, "Failed to convert blksize value to int '{}' [{}]", opt.second, _client);
       }
     }
     else if (std::strcmp(opt.first.c_str(), TSIZE_OPT) == 0)
@@ -165,7 +166,7 @@ void tftp_server_connection::process_options(const tftp::rw_packet_t &request)
         break;
       }
       case tftp::packet_t::WRITE: {
-        dbg_trace("Incoming file '{}' is {} bytes [{}]", request.filename, opt.second, _client);
+        log_trace(_logger, "Incoming file '{}' is {} bytes [{}]", request.filename, opt.second, _client);
         break;
       }
       case tftp::packet_t::DATA:
@@ -184,18 +185,18 @@ void tftp_server_connection::process_options(const tftp::rw_packet_t &request)
         const uint64_t req_timeout_s = std::stoull(opt.second);
         if ((req_timeout_s < 1) || (req_timeout_s > 255))
         {
-          dbg_warn("Received invalid timeout value '{}' [{}]", opt.second, _client);
+          log_warn(_logger, "Received invalid timeout value '{}' [{}]", opt.second, _client);
         }
         else
         {
           _timeout_s = static_cast<uint8_t>(req_timeout_s);
           _oack_packet.options.push_back(std::make_pair(opt.first, std::to_string(_timeout_s)));
-          dbg_trace("Set timeout to {}s [{}]", _timeout_s, _client);
+          log_trace(_logger, "Set timeout to {}s [{}]", _timeout_s, _client);
         }
       }
       catch (const std::exception &err)
       {
-        dbg_err("Failed to convert timeout value to int '{}' [{}]", opt.second, _client);
+        log_error(_logger, "Failed to convert timeout value to int '{}' [{}]", opt.second, _client);
       }
     }
   }
@@ -257,7 +258,7 @@ void tftp_server_connection::retransmit()
   else
   {
     assert(false);
-    dbg_err("Unable to retransmit: Invalid state.");
+    log_error(_logger, "Unable to retransmit: Invalid state.");
   }
 }
 
@@ -268,13 +269,13 @@ void tftp_server_connection::handle_read()
   {
     if (_timeout_count >= MAX_TIMEOUTS)
     {
-      dbg_err("Reached maximum retransmits, ending connection [{}]", _client);
+      log_error(_logger, "Reached maximum retransmits, ending connection [{}]", _client);
       _finished = true;
     }
     else
     {
       _timeout_count += 1;
-      dbg_warn("Timed out in '{}': retransmitting last packet. [{}]", state_to_string(_state), _client);
+      log_warn(_logger, "Timed out in '{}': retransmitting last packet. [{}]", state_to_string(_state), _client);
       retransmit();
     }
     return;
@@ -290,7 +291,8 @@ void tftp_server_connection::handle_read()
       _timeout_count = 0;
       if (ack_packet->block_number == (_block_number - 1))
       {
-        dbg_trace(
+        log_trace(
+            _logger,
             "Received ack to previous packet data packet ({}), assuming packet was lost, retransmitting last [{}]",
             _block_number - 1, _client);
         _state = state_t::SEND_DATA;
@@ -299,19 +301,19 @@ void tftp_server_connection::handle_read()
       {
         if (_final_ack)
         {
-          dbg_trace("Received final ack ({}) [{}]", _block_number, _client);
+          log_trace(_logger, "Received final ack ({}) [{}]", _block_number, _client);
           _finished = true;
           break;
         }
-        dbg_trace("Received ack to block {} [{}]", _block_number, _client);
+        log_trace(_logger, "Received ack to block {} [{}]", _block_number, _client);
         _pkt_ready = false;
         _state     = state_t::SEND_DATA;
         ++_block_number;
       }
       else
       {
-        dbg_err("Received incorrect block number in ack {} vs expected {} [{}]", ack_packet->block_number,
-                _block_number, _client);
+        log_error(_logger, "Received incorrect block number in ack {} vs expected {} [{}]", ack_packet->block_number,
+                  _block_number, _client);
         _state = state_t::ERROR;
       }
     }
@@ -320,8 +322,8 @@ void tftp_server_connection::handle_read()
       const auto error_packet = tftp::deserialise_error_packet(recv_data);
       if (error_packet)
       {
-        dbg_warn("Received error when waiting for ack to block {} from client [{}] : {} - {}", _block_number, _client,
-                 error_packet->error_code, error_packet->error_msg);
+        log_warn(_logger, "Received error when waiting for ack to block {} from client [{}] : {} - {}", _block_number,
+                 _client, error_packet->error_code, error_packet->error_msg);
         _finished = true;
       }
     }
@@ -335,7 +337,8 @@ void tftp_server_connection::handle_read()
       _timeout_count = 0;
       if (data_packet->block_number == (_block_number - 1))
       {
-        dbg_trace(
+        log_trace(
+            _logger,
             "Received data packet to previous ack packet ({}), assuming packet was lost, retransmitting last ack [{}]",
             _block_number - 1, _client);
         _block_number -= 1;
@@ -343,11 +346,11 @@ void tftp_server_connection::handle_read()
       }
       else if (data_packet->block_number == _block_number)
       {
-        dbg_trace("Received data block {} from {}", _block_number, _client);
+        log_trace(_logger, "Received data block {} from {}", _block_number, _client);
         _file_writer.write(data_packet->data);
         if (_file_writer.error())
         {
-          dbg_err("Error occued when writing data block {} from {}", _block_number, _client);
+          log_error(_logger, "Error occued when writing data block {} from {}", _block_number, _client);
           _error_pkt = tftp::error_packet_t(tftp::error_t::NOT_DEFINED, "Internal server error");
           _state     = state_t::ERROR;
           break;
@@ -355,7 +358,7 @@ void tftp_server_connection::handle_read()
 
         if (data_packet->data.size() < _block_size)
         {
-          dbg_trace("Received final data block from client {}", _client);
+          log_trace(_logger, "Received final data block from client {}", _client);
           _final_ack = true;
         }
 
@@ -363,7 +366,7 @@ void tftp_server_connection::handle_read()
       }
       else
       {
-        dbg_err("Received incorrect block number in data packet {} from {}", _block_number, _client);
+        log_error(_logger, "Received incorrect block number in data packet {} from {}", _block_number, _client);
         _state = state_t::ERROR;
       }
     }
@@ -372,8 +375,8 @@ void tftp_server_connection::handle_read()
       const auto error_packet = tftp::deserialise_error_packet(recv_data);
       if (error_packet)
       {
-        dbg_warn("Received error when waiting for data packet block {} from client [{}] : {} - {}", _block_number,
-                 _client, error_packet->error_code, error_packet->error_msg);
+        log_warn(_logger, "Received error when waiting for data packet block {} from client [{}] : {} - {}",
+                 _block_number, _client, error_packet->error_code, error_packet->error_msg);
         _finished = true;
       }
     }
@@ -401,14 +404,14 @@ void tftp_server_connection::handle_write()
       _file_reader.read_in_to(_data_pkt.data, _block_size);
       if (_file_reader.error())
       {
-        dbg_err("Error occued when reading data block {} from {}", _block_number, _client);
+        log_error(_logger, "Error occued when reading data block {} from {}", _block_number, _client);
         _error_pkt = tftp::error_packet_t(tftp::error_t::NOT_DEFINED, "Internal server error");
         _state     = state_t::ERROR;
         break;
       }
       else if ((_data_pkt.data.size() < _block_size) || _file_reader.eof())
       {
-        dbg_trace("Read last data block {} ({} bytes) [{}]", _block_number, _data_pkt.data.size(), _client);
+        log_trace(_logger, "Read last data block {} ({} bytes) [{}]", _block_number, _data_pkt.data.size(), _client);
         if (_data_pkt.data.size() < _block_size)
         {
           _final_ack = true;
@@ -422,19 +425,19 @@ void tftp_server_connection::handle_write()
     const ssize_t ret = _udp.send(tftp::serialise_data_packet(_data_pkt));
     if ((ret <= 0) && ((errno != EAGAIN) && (errno != EWOULDBLOCK)))
     {
-      dbg_err("Send data packet failed for client {} : {}", _client, utils::string_error(errno));
+      log_error(_logger, "Send data packet failed for client {} : {}", _client, utils::string_error(errno));
       _error_pkt = tftp::error_packet_t(tftp::error_t::NOT_DEFINED, "Internal server error");
       _state     = state_t::ERROR;
     }
     else if (ret > 0)
     {
-      dbg_trace("Sent data packet block {} [{}]", _block_number, _client);
+      log_trace(_logger, "Sent data packet block {} [{}]", _block_number, _client);
       _state = state_t::WAIT_FOR_ACK;
       _timer.arm_timer(_timeout_s);
     }
     else
     {
-      dbg_trace("Send for data packet block {} not ready for client {}", _block_number, _client);
+      log_trace(_logger, "Send for data packet block {} not ready for client {}", _block_number, _client);
     }
     break;
   }
@@ -443,7 +446,7 @@ void tftp_server_connection::handle_write()
     const ssize_t ret  = _udp.send(data);
     if ((ret <= 0) && ((errno != EAGAIN) && (errno != EWOULDBLOCK)))
     {
-      dbg_err("Send failed : {}", utils::string_error(errno));
+      log_error(_logger, "Send failed : {}", utils::string_error(errno));
       _error_pkt = tftp::error_packet_t(tftp::error_t::NOT_DEFINED, "Internal server error");
       _state     = state_t::ERROR;
     }
@@ -451,18 +454,18 @@ void tftp_server_connection::handle_write()
     {
       if (_final_ack)
       {
-        dbg_trace("Sent final ack packet block {} [{}]", _block_number, _client);
+        log_trace(_logger, "Sent final ack packet block {} [{}]", _block_number, _client);
         _finished = true;
         break;
       }
-      dbg_trace("Sent ack packet block {} [{}]", _block_number, _client);
+      log_trace(_logger, "Sent ack packet block {} [{}]", _block_number, _client);
       ++_block_number;
       _state = state_t::WAIT_FOR_DATA;
       _timer.arm_timer(_timeout_s);
     }
     else
     {
-      dbg_info("Send for data packet block {} not ready for client {}", _block_number, _client);
+      log_info(_logger, "Send for data packet block {} not ready for client {}", _block_number, _client);
     }
     break;
   }
@@ -471,12 +474,12 @@ void tftp_server_connection::handle_write()
     const ssize_t ret  = _udp.send(data);
     if ((ret <= 0) && ((errno != EAGAIN) && (errno != EWOULDBLOCK)))
     {
-      dbg_err("Send OACK failed : {}", utils::string_error(errno));
+      log_error(_logger, "Send OACK failed : {}", utils::string_error(errno));
       _finished = true;
     }
     else if (ret > 0)
     {
-      dbg_trace("Sent OACK packet");
+      log_trace(_logger, "Sent OACK packet");
       if (_type == tftp::packet_t::READ)
       {
         _state = state_t::WAIT_FOR_ACK;
@@ -493,12 +496,12 @@ void tftp_server_connection::handle_write()
     const ssize_t ret  = _udp.send(data);
     if ((ret <= 0) && ((errno != EAGAIN) && (errno != EWOULDBLOCK)))
     {
-      dbg_err("Send error msg failed : {}", utils::string_error(errno));
+      log_error(_logger, "Send error msg failed : {}", utils::string_error(errno));
       _finished = true;
     }
     else if (ret > 0)
     {
-      dbg_trace("Sent error packet");
+      log_trace(_logger, "Sent error packet");
       _finished = true;
     }
     break;
@@ -506,7 +509,7 @@ void tftp_server_connection::handle_write()
   case state_t::WAIT_FOR_ACK:
   case state_t::WAIT_FOR_DATA:
   default: {
-    dbg_err("Error state");
+    log_error(_logger, "Error state");
     throw std::runtime_error("Error state");
   }
   }
@@ -520,23 +523,24 @@ std::optional<tftp::error_packet_t> tftp_server_connection::is_operation_allowed
   const auto canonical_filepath    = std::filesystem::weakly_canonical(filepath);
   const auto canonical_server_root = std::filesystem::absolute(std::filesystem::current_path());
 
-  dbg_trace("Checking if requested file : {} is within server root {}", canonical_filepath, canonical_server_root);
+  log_trace(_logger, "Checking if requested file : {} is within server root {}", canonical_filepath,
+            canonical_server_root);
 
   if (!utils::is_subpath(canonical_filepath, canonical_server_root))
   {
-    dbg_warn("File {} is not in server root [{}]", canonical_filepath, _client);
+    log_warn(_logger, "File {} is not in server root [{}]", canonical_filepath, _client);
     return tftp::error_packet_t(tftp::error_t::ACCESS_ERROR, "Access denied");
   }
 
   if ((type == tftp::packet_t::WRITE) && (std::filesystem::exists(canonical_filepath)))
   {
-    dbg_warn("File {} already exists [{}]", canonical_filepath, _client);
+    log_warn(_logger, "File {} already exists [{}]", canonical_filepath, _client);
     return tftp::error_packet_t(tftp::error_t::FILE_EXISTS, "File already exists");
   }
 
   if ((type == tftp::packet_t::READ) && (!std::filesystem::exists(canonical_filepath)))
   {
-    dbg_warn("File {} does not exists [{}]", canonical_filepath, _client);
+    log_warn(_logger, "File {} does not exists [{}]", canonical_filepath, _client);
     return tftp::error_packet_t(tftp::error_t::ACCESS_ERROR, "File not found");
   }
 

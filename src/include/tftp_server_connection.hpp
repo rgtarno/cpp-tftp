@@ -1,8 +1,11 @@
 #pragma once
 
 #include <arpa/inet.h>
+#include <memory>
 #include <optional>
 #include <string>
+
+#include <spdlog/logger.h>
 
 #include "tftp.hpp"
 #include "tftp_read_file.hpp"
@@ -46,23 +49,24 @@ public:
   static std::string state_to_string(const state_t state);
 
 private:
-  udp_connection       _udp;
-  const tftp::packet_t _type;
-  tftp_read_file       _file_reader;
-  tftp_write_file      _file_writer;
-  struct sockaddr_in   _client;
-  tftp::data_packet_t  _data_pkt;
-  tftp::error_packet_t _error_pkt;
-  bool                 _finished;
-  bool                 _final_ack;
-  bool                 _pkt_ready;
-  state_t              _state;
-  uint8_t              _timeout_s;
-  uint8_t              _timeout_count;
-  uint16_t             _block_number;
-  size_t               _block_size;
-  tftp::oack_packet_t  _oack_packet;
-  timer                _timer;
+  std::shared_ptr<spdlog::logger> _logger;
+  udp_connection                  _udp;
+  const tftp::packet_t            _type;
+  tftp_read_file                  _file_reader;
+  tftp_write_file                 _file_writer;
+  struct sockaddr_in              _client;
+  tftp::data_packet_t             _data_pkt;
+  tftp::error_packet_t            _error_pkt;
+  bool                            _finished;
+  bool                            _final_ack;
+  bool                            _pkt_ready;
+  state_t                         _state;
+  uint8_t                         _timeout_s;
+  uint8_t                         _timeout_count;
+  uint16_t                        _block_number;
+  size_t                          _block_size;
+  tftp::oack_packet_t             _oack_packet;
+  timer                           _timer;
 
   void                                process_options(const tftp::rw_packet_t &request);
   void                                retransmit();

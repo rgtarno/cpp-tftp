@@ -8,8 +8,10 @@
 
 namespace
 {
-  static const char BLKSIZE_OPT[] = "BLKSIZE";
-  static const char TSIZE_OPT[]   = "TSIZE";
+  const char    BLKSIZE_OPT[] = "BLKSIZE";
+  const char    TSIZE_OPT[]   = "TSIZE";
+  const char    TIMEOUT_OPT[] = "TIMEOUT";
+  const uint8_t MAX_TIMEOUTS  = 3;
 }; // namespace
 
 //========================================================
@@ -25,9 +27,12 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
     _final_ack(false),
     _pkt_ready(false),
     _state(state_t::ERROR),
+    _timeout_s(2),
+    _timeout_count(0),
     _block_number(0),
     _block_size(512),
-    _oack_packet{}
+    _oack_packet{},
+    _timer()
 
 {
   _udp.bind("", 0);
@@ -49,7 +54,7 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
     switch (request.type)
     {
     case tftp::packet_t::READ: {
-      dbg_trace("Connection created for request to READ '{}' by client [{}]", request.filename, _client);
+      dbg_dbg("Connection created for request to READ '{}' by client [{}]", request.filename, _client);
       try
       {
         _file_reader.open(request.filename, request.mode);
@@ -75,7 +80,7 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
       break;
     }
     case tftp::packet_t::WRITE: {
-      dbg_trace("Connection created for request to WRITE '{}' by client [{}]", request.filename, _client);
+      dbg_dbg("Connection created for request to WRITE '{}' by client [{}]", request.filename, _client);
       if (_oack_packet.options.empty())
       {
         _state = state_t::SEND_ACK;
@@ -172,6 +177,27 @@ void tftp_server_connection::process_options(const tftp::rw_packet_t &request)
       }
       }
     }
+    else if (std::strcmp(opt.first.c_str(), TIMEOUT_OPT) == 0)
+    {
+      try
+      {
+        const uint64_t req_timeout_s = std::stoull(opt.second);
+        if ((req_timeout_s < 1) || (req_timeout_s > 255))
+        {
+          dbg_warn("Received invalid timeout value '{}' [{}]", opt.second, _client);
+        }
+        else
+        {
+          _timeout_s = static_cast<uint8_t>(req_timeout_s);
+          _oack_packet.options.push_back(std::make_pair(opt.first, std::to_string(_timeout_s)));
+          dbg_trace("Set timeout to {}s [{}]", _timeout_s, _client);
+        }
+      }
+      catch (const std::exception &err)
+      {
+        dbg_err("Failed to convert timeout value to int '{}' [{}]", opt.second, _client);
+      }
+    }
   }
 }
 
@@ -180,11 +206,22 @@ int tftp_server_connection::sd() const
 {
   return _udp.sd();
 }
+//========================================================
+int tftp_server_connection::timer_fd() const
+{
+  return _timer.fd();
+}
 
 //========================================================
 bool tftp_server_connection::is_finished() const
 {
   return _finished;
+}
+
+//========================================================
+void tftp_server_connection::set_finished(const bool finished)
+{
+  _finished = finished;
 }
 
 //========================================================
@@ -206,8 +243,43 @@ const struct sockaddr_in &tftp_server_connection::client()
 }
 
 //========================================================
+void tftp_server_connection::retransmit()
+{
+  if (_state == state_t::WAIT_FOR_ACK)
+  {
+    _state = state_t::SEND_DATA;
+  }
+  else if (_state == state_t::WAIT_FOR_DATA)
+  {
+    _state = state_t::SEND_ACK;
+    _block_number -= 1;
+  }
+  else
+  {
+    assert(false);
+    dbg_err("Unable to retransmit: Invalid state.");
+  }
+}
+
+//========================================================
 void tftp_server_connection::handle_read()
 {
+  if (_timer.has_expired())
+  {
+    if (_timeout_count >= MAX_TIMEOUTS)
+    {
+      dbg_err("Reached maximum retransmits, ending connection [{}]", _client);
+      _finished = true;
+    }
+    else
+    {
+      _timeout_count += 1;
+      dbg_warn("Timed out in '{}': retransmitting last packet. [{}]", state_to_string(_state), _client);
+      retransmit();
+    }
+    return;
+  }
+
   switch (_state)
   {
   case state_t::WAIT_FOR_ACK: {
@@ -215,6 +287,7 @@ void tftp_server_connection::handle_read()
     const auto ack_packet = tftp::deserialise_ack_packet(recv_data);
     if (ack_packet)
     {
+      _timeout_count = 0;
       if (ack_packet->block_number == (_block_number - 1))
       {
         dbg_trace(
@@ -226,11 +299,11 @@ void tftp_server_connection::handle_read()
       {
         if (_final_ack)
         {
-          dbg_trace("Received final ack ({})", _block_number);
+          dbg_trace("Received final ack ({}) [{}]", _block_number, _client);
           _finished = true;
           break;
         }
-        dbg_trace("Received ack to block {}", _block_number);
+        dbg_trace("Received ack to block {} [{}]", _block_number, _client);
         _pkt_ready = false;
         _state     = state_t::SEND_DATA;
         ++_block_number;
@@ -259,6 +332,7 @@ void tftp_server_connection::handle_read()
     const auto data_packet = tftp::deserialise_data_packet(recv_data);
     if (data_packet)
     {
+      _timeout_count = 0;
       if (data_packet->block_number == (_block_number - 1))
       {
         dbg_trace(
@@ -339,14 +413,6 @@ void tftp_server_connection::handle_write()
         {
           _final_ack = true;
         }
-        else
-        {
-          dbg_trace("Ended cleanly on block size {} [{}]", _block_size, _client);
-        }
-      }
-      else
-      {
-        dbg_trace("Created data packet block {} [{}]", _block_number, _client);
       }
 
       _data_pkt.block_number = _block_number;
@@ -364,6 +430,7 @@ void tftp_server_connection::handle_write()
     {
       dbg_trace("Sent data packet block {} [{}]", _block_number, _client);
       _state = state_t::WAIT_FOR_ACK;
+      _timer.arm_timer(_timeout_s);
     }
     else
     {
@@ -391,6 +458,7 @@ void tftp_server_connection::handle_write()
       dbg_trace("Sent ack packet block {} [{}]", _block_number, _client);
       ++_block_number;
       _state = state_t::WAIT_FOR_DATA;
+      _timer.arm_timer(_timeout_s);
     }
     else
     {
@@ -473,4 +541,26 @@ std::optional<tftp::error_packet_t> tftp_server_connection::is_operation_allowed
   }
 
   return std::nullopt;
+}
+
+//========================================================
+std::string tftp_server_connection::state_to_string(const state_t state)
+{
+  switch (state)
+  {
+  case state_t::WAIT_FOR_ACK:
+    return std::string("Wait for ACK");
+  case state_t::WAIT_FOR_DATA:
+    return std::string("Wait for DATA");
+  case state_t::SEND_ACK:
+    return std::string("Send ACK");
+  case state_t::SEND_DATA:
+    return std::string("Send DATA");
+  case state_t::SEND_OACK:
+    return std::string("Send OACK");
+  case state_t::ERROR:
+    return std::string("Send ERROR");
+  default:
+    return std::string("UNKNOWN");
+  }
 }

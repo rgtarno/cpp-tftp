@@ -2,7 +2,6 @@
 
 #include <cassert>
 
-#include "debug_macros.hpp"
 #include "utils.hpp"
 
 //========================================================
@@ -63,7 +62,6 @@ void tftp_write_file::write(const std::vector<char> &data)
     {
       bytes_written += fwrite(native_data.data(), 1, native_data.size() - bytes_written, _fd);
     }
-    dbg_trace("Wrote {} bytes to file", bytes_written);
   }
   else
   {
@@ -71,6 +69,5 @@ void tftp_write_file::write(const std::vector<char> &data)
     {
       bytes_written += fwrite(data.data(), 1, data.size() - bytes_written, _fd);
     }
-    dbg_trace("Wrote {} bytes to file", bytes_written);
   }
 }

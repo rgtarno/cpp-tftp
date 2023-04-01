@@ -76,30 +76,36 @@ void tftp_server::start()
         while (_conn_handler.requests_pending() && (_client_connections.size() < _max_clients))
         {
           auto new_request = _conn_handler.get_request();
-          dbg_trace("Accepting new connection from client {}", new_request.client);
+          dbg_dbg("Accepting new connection from client {}", new_request.client);
           _client_connections.emplace_back(new_request.request, new_request.client);
           const uint32_t epoll_events = _client_connections.back().wait_for_read() ? EPOLLIN : EPOLLOUT;
           epoll_ctl_add(_client_connections.back().sd(), epoll_events, &_client_connections.back());
+          epoll_ctl_add(_client_connections.back().timer_fd(), EPOLLIN, &_client_connections.back());
         }
       }
       else
       {
+        tftp_server_connection *conn = reinterpret_cast<tftp_server_connection *>(events[i].data.ptr);
         if (events[i].events & EPOLLIN)
         {
-          reinterpret_cast<tftp_server_connection *>(events[i].data.ptr)->handle_read();
+          conn->handle_read();
         }
         else if (events[i].events & EPOLLOUT)
         {
-          reinterpret_cast<tftp_server_connection *>(events[i].data.ptr)->handle_write();
+          conn->handle_write();
+        }
+        else if (events[i].events & (EPOLLERR | EPOLLHUP))
+        {
+          dbg_warn("Socket error on connection to {}, closing connection", conn->client());
+          conn->set_finished(true);
         }
         else
         {
           dbg_warn("Unknown event : {}", events[i].events);
         }
 
-        events[i].events =
-            reinterpret_cast<tftp_server_connection *>(events[i].data.ptr)->wait_for_read() ? EPOLLIN : EPOLLOUT;
-        epoll_ctl_mod(reinterpret_cast<tftp_server_connection *>(events[i].data.ptr)->sd(), &events[i]);
+        events[i].events = conn->wait_for_read() ? EPOLLIN : EPOLLOUT;
+        epoll_ctl_mod(conn->sd(), &events[i]);
       }
     }
 
@@ -108,8 +114,9 @@ void tftp_server::start()
     {
       if (iter->is_finished())
       {
-        dbg_trace("Closing connection {}", iter->client());
+        dbg_dbg("Closing connection {}", iter->client());
         epoll_ctl_del(iter->sd());
+        epoll_ctl_del(iter->timer_fd());
         iter = _client_connections.erase(iter);
       }
     }

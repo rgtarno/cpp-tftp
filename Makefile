@@ -7,7 +7,7 @@ TEST_BIN:=tests
 BUILD:=./build
 OBJ_DIR:=$(BUILD)/objects
 APP_DIR:=$(BUILD)/apps
-VERSION?=debug
+VERSION?=release
 
 LDLAGS:=-lm -ldl -lpthread -lspdlog -lfmt
 CXXFLAGS:=-std=c++17 -Wall -Wextra -Werror -Wswitch-enum -Wshadow -Woverloaded-virtual -Wnull-dereference -Wformat=2 -DSPDLOG_COMPILED_LIB
@@ -16,7 +16,8 @@ INCLUDE:=-Isrc/include/
 ifeq ($(VERSION),release)
 CXXFLAGS+= -O2 -DNDEBUG -DRELEASE
 else
-CXXFLAGS+= -ggdb -g
+CXXFLAGS+= -ggdb -g -fsanitize=address,undefined
+LDLAGS+= -fsanitize=address,undefined
 endif
  
 
@@ -66,19 +67,13 @@ tests: $(APP_DIR)/$(TEST_BIN)
 	@echo Running tests
 	@$(APP_DIR)/$(TEST_BIN)
 
-format:
-	@clang-format-13 -i `find src/ -name *.cpp`
-	@clang-format-13 -i `find src/ -name *.hpp`
-
-cppcheck:
-	@cppcheck --enable=all src/ -I src/include/
-
 clean:
-	-@rm -rvf $(OBJ_DIR)/*
-	-@rm -rvf $(APP_DIR)/*
+	-@rm -rvf $(BUILD)
 
 client: build $(APP_DIR)/$(CLIENT)
 server: build $(APP_DIR)/$(SERVER)
+
+all: server client
 
 .PHONY:
 

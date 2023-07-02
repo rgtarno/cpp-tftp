@@ -22,7 +22,7 @@
 #define log_error(logger, ...)                                                                                         \
   logger->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::err, __VA_ARGS__)
 
-/* These onces lock a mutex */
+/* These ones lock a mutex */
 #define dbg_trace(...)                                                                                                 \
   spdlog::get("console")->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::trace, __VA_ARGS__)
 #define dbg_dbg(...)                                                                                                   \
@@ -49,7 +49,7 @@
 #define log_error(logger, ...) logger->error(__VA_ARGS__)
 #define log_critical(logger, ...) logger->critical(__VA_ARGS__)
 
-/* These onces lock a mutex */
+/* These ones lock a mutex */
 #define dbg_trace(...) spdlog::get("console")->trace(__VA_ARGS__)
 #define dbg_dbg(...) spdlog::get("console")->debug(__VA_ARGS__)
 #define dbg_info(...) spdlog::get("console")->info(__VA_ARGS__)

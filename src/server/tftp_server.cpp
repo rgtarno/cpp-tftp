@@ -69,6 +69,7 @@ void tftp_server::start()
 
     for (int i = 0; i < num_events; ++i)
     {
+      /* Handle new requests */
       if (events[i].data.ptr == &_conn_handler)
       {
         _conn_handler.handle_read();
@@ -85,6 +86,7 @@ void tftp_server::start()
       }
       else
       {
+        /* Service connected clients */
         tftp_server_connection *conn = reinterpret_cast<tftp_server_connection *>(events[i].data.ptr);
         if (events[i].events & EPOLLIN)
         {
@@ -109,7 +111,7 @@ void tftp_server::start()
       }
     }
 
-    // Clean up -- TODO: intergrate this in to the above epoll event handling
+    // Clean up -- TODO: integrate this in to the above epoll event handling
     for (auto iter = _client_connections.begin(); iter != _client_connections.end(); ++iter)
     {
       if (iter->is_finished())

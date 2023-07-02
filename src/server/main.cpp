@@ -9,13 +9,11 @@ static tftp_server *_pserver = nullptr;
 void sig_handler(int signum);
 void setup_signal_handlers();
 void print_usage(char *argv0);
-void initialise_logger();
+int  initialise_logger(const bool trace);
 
 //==========================================================
 int main(int argc, char **argv)
 {
-  setup_signal_handlers();
-  initialise_logger();
 
   if (argc < 3)
   {
@@ -23,12 +21,19 @@ int main(int argc, char **argv)
     return 1;
   }
 
+  const bool        log_trace = std::stoul(argv[3]);
   const std::string server_root(argv[1]);
   const std::string interface(argv[2]);
 
+  setup_signal_handlers();
+  if (initialise_logger(log_trace))
+  {
+    return 1;
+  }
+
   try
   {
-    tftp_server server(server_root, interface, 5);
+    tftp_server server(server_root, interface, 100);
     _pserver = &server;
 
     dbg_trace("Starting server");
@@ -71,14 +76,34 @@ void setup_signal_handlers()
 //==========================================================
 void print_usage(char *argv0)
 {
-  fmt::print("Usage: {} [SERVER_ROOT] [INTERFACE]\n", argv0);
+  fmt::print(stderr, "Usage: {} [SERVER_ROOT] [INTERFACE] [DEBUG]\n", argv0);
+  fmt::print(stderr, "\tSERVER_ROOT: (Required) Path to a directory from which to serve / receive files\n");
+  fmt::print(stderr, "\tINTERFACE:   (Required) Local ip address to bind to (0.0.0.0 for any)\n");
+  fmt::print(stderr, "\tDEBUG:       (Optional) 1 to turn on debug and trace prints\n");
 }
 
 //==========================================================
-void initialise_logger()
+int initialise_logger(const bool trace)
 {
-  spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v");
-  auto err_logger = spdlog::stderr_color_mt("console");
-  spdlog::set_level(spdlog::level::trace);
-  dbg_dbg("Initialised log");
+  try
+  {
+    spdlog::set_pattern(LOGGER_PATTERN);
+    auto err_logger = spdlog::stderr_color_st("console");
+    if (trace)
+    {
+      spdlog::set_level(spdlog::level::trace);
+    }
+    else
+    {
+      spdlog::set_level(spdlog::level::debug);
+      dbg_dbg("Debug prints on");
+    }
+    dbg_dbg("Initialised log");
+  }
+  catch (const std::exception &e)
+  {
+    fmt::print(stderr, "Failed to setup logger");
+    return 1;
+  }
+  return 0;
 }

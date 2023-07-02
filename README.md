@@ -9,13 +9,19 @@ This is a C++ implementation of the TFTP protocol, specifically, this repo imple
 
 ***
 
+## Dependencies
+
+1. spdlog
+2. fmtlib
+
 ## Build
+
+To build the server
+```
+  make server
+```
 
 To build the client
 ```
   make client
-```
-To build the server
-```
-  make server
 ```

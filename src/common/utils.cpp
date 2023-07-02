@@ -46,7 +46,8 @@ std::vector<char> utils::netascii_to_native(const std::vector<char> &data)
   ret.reserve(data.size());
 
   // TODO: make this more efficient
-  for (auto iter = data.cbegin(); iter != data.cend(); ++iter)
+  auto iter = data.cbegin();
+  while (iter != data.cend())
   {
     if (*iter == CR)
     {
@@ -64,6 +65,11 @@ std::vector<char> utils::netascii_to_native(const std::vector<char> &data)
     else
     {
       ret.push_back(*iter);
+    }
+
+    if (std::next(iter) != data.cend())
+    {
+      ++iter;
     }
   }
 

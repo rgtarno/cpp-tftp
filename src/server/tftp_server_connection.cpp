@@ -120,6 +120,11 @@ tftp_server_connection::tftp_server_connection(const tftp::rw_packet_t &request,
 tftp_server_connection::~tftp_server_connection() = default;
 
 //========================================================
+/**
+ * @brief Parse options contained in a read/write request packet
+ *
+ * Currently supports block size, transfer size and timeout duration
+ */
 void tftp_server_connection::process_options(const tftp::rw_packet_t &request)
 {
   for (const auto &opt : request.options)
@@ -203,11 +208,17 @@ void tftp_server_connection::process_options(const tftp::rw_packet_t &request)
 }
 
 //========================================================
+/**
+ * @brief Returns file descriptor of the UDP socket
+ */
 int tftp_server_connection::sd() const
 {
   return _udp.sd();
 }
 //========================================================
+/**
+ * @brief Returns file descriptor of the timer fd
+ */
 int tftp_server_connection::timer_fd() const
 {
   return _timer.fd();
@@ -220,17 +231,26 @@ bool tftp_server_connection::is_finished() const
 }
 
 //========================================================
+/**
+ * @brief Set the finished flag
+ */
 void tftp_server_connection::set_finished(const bool finished)
 {
   _finished = finished;
 }
 
 //========================================================
+/**
+ * @brief Returns true if this client session is waiting to receive a packet
+ */
 bool tftp_server_connection::wait_for_read() const
 {
   return (_state == state_t::WAIT_FOR_ACK || _state == state_t::WAIT_FOR_DATA);
 }
 //========================================================
+/**
+ * @brief Returns true if this client session is waiting to send a packet
+ */
 bool tftp_server_connection::wait_for_write() const
 {
   return (_state == state_t::SEND_ACK || _state == state_t::SEND_DATA || _state == state_t::SEND_OACK ||
@@ -244,6 +264,10 @@ const struct sockaddr_in &tftp_server_connection::client()
 }
 
 //========================================================
+/**
+ * @brief Changes the state machines state to resend the previous packet
+ *
+ */
 void tftp_server_connection::retransmit()
 {
   if (_state == state_t::WAIT_FOR_ACK)
@@ -263,6 +287,10 @@ void tftp_server_connection::retransmit()
 }
 
 //========================================================
+/**
+ * @brief Handles reading of the next packet and advances the state machine
+ *
+ */
 void tftp_server_connection::handle_read()
 {
   if (_timer.has_expired())
@@ -393,6 +421,10 @@ void tftp_server_connection::handle_read()
 }
 
 //========================================================
+/**
+ * @brief Handles sending of the current packet and advances the state machine
+ *
+ */
 void tftp_server_connection::handle_write()
 {
   switch (_state)
@@ -516,6 +548,18 @@ void tftp_server_connection::handle_write()
 }
 
 //========================================================
+/**
+ * @brief Checks if a read / write operation is allowed
+ *
+ * Checks if the request filepath is contained within the server root.
+ * Checks if a file already exists for write requests.
+ * Checks if a file doesn't exist for read requests.
+ *
+ * @param file_request Request filepath
+ * @param type Request type: read or write.
+ * @return std::optional<tftp::error_packet_t> Returns nullopt if operation is ok, otherwise, returns the error packet
+ * with the error code & msg.
+ */
 std::optional<tftp::error_packet_t> tftp_server_connection::is_operation_allowed(const std::string   &file_request,
                                                                                  const tftp::packet_t type) const
 {

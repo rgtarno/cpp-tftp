@@ -60,7 +60,7 @@ int main(int argc, char **argv)
   {
     int option_index = 0;
 
-    int c = getopt_long(argc, argv, "wh:i:t:", long_options, &option_index);
+    int c = getopt_long(argc, argv, "vwh:i:t:", long_options, &option_index);
 
     if (c == -1)
       break;
@@ -81,6 +81,10 @@ int main(int argc, char **argv)
     }
     case 't': {
       transfer_mode = optarg;
+      break;
+    }
+    case 'v': {
+      verbose_flag = 1;
       break;
     }
     }

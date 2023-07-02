@@ -29,11 +29,18 @@ void tftp_connection_handler::handle_read()
     auto client  = utils::to_sockaddr_in(ip_address, port_num);
     if (!client || !request)
     {
-      dbg_err("Failed to parse request");
+      if (client)
+      {
+        dbg_err("Failed to parse request from {}", client.value());
+      }
+      else
+      {
+        dbg_err("Failed to parse request");
+      }
     }
     else
     {
-      dbg_trace("Enqued request from {}:{}", ip_address, port_num);
+      dbg_trace("Enqueued request from {}:{}", ip_address, port_num);
       _request_queue.emplace(request.value(), client.value());
     }
     data = _udp.recv_from(ip_address, port_num, 2048);

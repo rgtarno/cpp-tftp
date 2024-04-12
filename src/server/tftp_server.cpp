@@ -103,7 +103,8 @@ void tftp_server::start()
         }
         else
         {
-          dbg_warn("Unknown event : {}", events[i].events);
+          const int unknown_event = events[i].events;
+          dbg_warn("Unknown event : {}", unknown_event);
         }
 
         events[i].events = conn->wait_for_read() ? EPOLLIN : EPOLLOUT;

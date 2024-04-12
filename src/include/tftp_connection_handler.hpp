@@ -11,7 +11,7 @@
 class tftp_connection_handler
 {
 public:
-  tftp_connection_handler(const std::string &addr = "", const uint16_t port = 0);
+  explicit tftp_connection_handler(const std::string &addr = "", const uint16_t port = 0);
 
   struct request_t
   {

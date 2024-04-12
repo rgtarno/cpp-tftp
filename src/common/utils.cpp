@@ -77,10 +77,10 @@ std::vector<char> utils::netascii_to_native(const std::vector<char> &data)
 }
 
 //========================================================
-std::optional<sockaddr_in> utils::to_sockaddr_in(const std::string &addr, const uint16_t port)
+std::optional<struct sockaddr_in> utils::to_sockaddr_in(const std::string &addr, const uint16_t port)
 {
-  sockaddr_in sa;
-  std::memset(&sa, 0, sizeof(sockaddr_in));
+  struct sockaddr_in sa;
+  std::memset(&sa, 0, sizeof(sa));
   sa.sin_port   = htons(port);
   sa.sin_family = AF_INET;
   if (addr.empty())

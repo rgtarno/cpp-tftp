@@ -13,7 +13,7 @@ std::vector<T> join_vectors(const std::vector<std::vector<T>> &data)
   return ret;
 }
 
-std::vector<char> string_to_vector_null(const std::string &str)
+inline std::vector<char> string_to_vector_null(const std::string &str)
 {
   std::vector<char> ret(str.begin(), str.end());
   ret.push_back(0);

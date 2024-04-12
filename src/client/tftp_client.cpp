@@ -66,7 +66,7 @@ void tftp_client::get_file(const std::string &filename, const std::string &tftp_
   std::ofstream               out_file(out_filename.filename(), std::ios_base::binary);
   if (!out_file)
   {
-    dbg_err("Failed to open file for writing '{}'", out_filename);
+    dbg_err("Failed to open file for writing '{}'", out_filename.c_str());
     return;
   }
 
@@ -75,8 +75,7 @@ void tftp_client::get_file(const std::string &filename, const std::string &tftp_
 
   tftp::ack_packet_t ack(block_number);
 
-  bool finished = false;
-  while (!finished)
+  while (true)
   {
     dbg_trace("Sending ack to block {}", block_number);
     udp.send(tftp::serialise_ack_packet(ack));
@@ -95,7 +94,6 @@ void tftp_client::get_file(const std::string &filename, const std::string &tftp_
     if (data_packet->data.size() < tftp::DATA_PKT_DATA_MAX_SIZE)
     {
       dbg_trace("Final block is {} ({} bytes)", block_number - 1, data_packet->data.size());
-      finished = true;
       break;
     }
 

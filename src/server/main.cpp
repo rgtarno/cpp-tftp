@@ -21,7 +21,16 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  const bool        log_trace = std::stoul(argv[3]);
+  bool        log_trace = false;
+  try
+  {
+    log_trace = std::stoul(argv[3]);
+  }
+  catch (const std::exception& err)
+  {
+    fmt::print(stderr, "Failed to parse DEBUG argument : {}\n", err.what());
+    return 1;
+  }
   const std::string server_root(argv[1]);
   const std::string interface(argv[2]);
 

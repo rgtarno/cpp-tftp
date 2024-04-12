@@ -34,7 +34,7 @@ public:
   bool wait_for_read() const;
   bool wait_for_write() const;
 
-  const struct sockaddr_in &client();
+  const struct sockaddr_in &client() const;
 
   enum class state_t
   {
@@ -55,6 +55,7 @@ private:
   tftp_read_file                  _file_reader;
   tftp_write_file                 _file_writer;
   struct sockaddr_in              _client;
+  std::string                     _client_str;
   tftp::data_packet_t             _data_pkt;
   tftp::error_packet_t            _error_pkt;
   bool                            _finished;

@@ -58,7 +58,6 @@ void udp_connection::set_non_blocking(const bool enable)
   {
     throw std::runtime_error(utils::string_error(errno));
   }
-  flags = fcntl(_sd, F_GETFL);
 }
 
 //========================================================

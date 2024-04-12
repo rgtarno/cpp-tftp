@@ -444,7 +444,8 @@ void tftp_server_connection::handle_write()
       }
       else if ((_data_pkt.data.size() < _block_size) || _file_reader.eof())
       {
-        log_trace(_logger, "Read last data block {} ({} bytes) [{}]", _block_number, _data_pkt.data.size(), _client_str);
+        log_trace(_logger, "Read last data block {} ({} bytes) [{}]", _block_number, _data_pkt.data.size(),
+                  _client_str);
         if (_data_pkt.data.size() < _block_size)
         {
           _final_ack = true;

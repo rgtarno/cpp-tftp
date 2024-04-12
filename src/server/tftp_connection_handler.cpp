@@ -25,7 +25,7 @@ void tftp_connection_handler::handle_read()
 
   while (!data.empty())
   {
-    auto request = tftp::deserialise_rw_packet(data);
+    auto       request = tftp::deserialise_rw_packet(data);
     const auto client  = utils::to_sockaddr_in(ip_address, port_num);
     if (!client || !request)
     {

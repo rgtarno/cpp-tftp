@@ -5,12 +5,14 @@
 #include "utils.hpp"
 
 //========================================================
-tftp_write_file::tftp_write_file() : _fd(NULL), _mode(tftp::mode_t::OCTET)
+tftp_write_file::tftp_write_file() :
+    _fd(NULL), _mode(tftp::mode_t::OCTET)
 {
 }
 
 //========================================================
-tftp_write_file::tftp_write_file(const std::string &filename, const tftp::mode_t mode) : _fd(NULL), _mode(mode)
+tftp_write_file::tftp_write_file(const std::string &filename, const tftp::mode_t mode) :
+    _fd(NULL), _mode(mode)
 {
   _fd = fopen(filename.c_str(), "wb");
   if (_fd == NULL)

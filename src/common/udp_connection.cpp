@@ -13,7 +13,8 @@
 #include "utils.hpp"
 
 //========================================================
-udp_connection::udp_connection() : _sd(-1)
+udp_connection::udp_connection() :
+    _sd(-1)
 {
   _sd = socket(AF_INET, SOCK_DGRAM, 0);
 

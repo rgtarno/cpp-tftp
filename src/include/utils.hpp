@@ -1,34 +1,38 @@
 #pragma once
 
-#include <spdlog/fmt/ostr.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
 #include <arpa/inet.h>
 #include <filesystem>
 #include <fmt/core.h>
 #include <optional>
+#include <spdlog/fmt/ostr.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <sstream>
 #include <string.h>
 #include <string>
-#include <sstream>
 #include <vector>
 
 /* formatter for struct sockaddr_in, required to be in the global namespace */
-template<> class fmt::formatter<struct sockaddr_in>
+template <>
+class fmt::formatter<struct sockaddr_in>
 {
-  public:
-    constexpr auto parse (format_parse_context& ctx) { return ctx.begin(); }
-    template <typename Context>
-    constexpr auto format (const struct sockaddr_in& sa, Context& ctx) const
+public:
+  constexpr auto parse(format_parse_context &ctx)
+  {
+    return ctx.begin();
+  }
+  template <typename Context>
+  constexpr auto format(const struct sockaddr_in &sa, Context &ctx) const
+  {
+    char addr_buf[INET_ADDRSTRLEN] = {0};
+    if (inet_ntop(AF_INET, &(sa.sin_addr), addr_buf, INET_ADDRSTRLEN) == NULL)
     {
-      char addr_buf[INET_ADDRSTRLEN] = {0};
-      if (inet_ntop(AF_INET, &(sa.sin_addr), addr_buf, INET_ADDRSTRLEN) == NULL)
-      {
-        return format_to(ctx.out(), "unknown:{}", htons(sa.sin_port));
-      }
-      else
-      {
-        return format_to(ctx.out(), "{}:{}", addr_buf, htons(sa.sin_port));
-      }
+      return format_to(ctx.out(), "unknown:{}", htons(sa.sin_port));
     }
+    else
+    {
+      return format_to(ctx.out(), "{}:{}", addr_buf, htons(sa.sin_port));
+    }
+  }
 };
 
 std::ostream &operator<<(std::ostream &os, const struct sockaddr_in &sa);

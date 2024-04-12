@@ -21,12 +21,12 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  bool        log_trace = false;
+  bool log_trace = false;
   try
   {
     log_trace = std::stoul(argv[3]);
   }
-  catch (const std::exception& err)
+  catch (const std::exception &err)
   {
     fmt::print(stderr, "Failed to parse DEBUG argument : {}\n", err.what());
     return 1;

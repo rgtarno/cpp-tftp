@@ -11,30 +11,30 @@
 #define PRINT_FUNCTION static_cast<const char *>(__FUNCTION__)
 
 /* Fast variants */
-#define log_trace(logger, ...)                                                                                         \
+#define log_trace(logger, ...) \
   logger->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::trace, __VA_ARGS__)
-#define log_debug(logger, ...)                                                                                         \
+#define log_debug(logger, ...) \
   logger->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::debug, __VA_ARGS__)
-#define log_info(logger, ...)                                                                                          \
+#define log_info(logger, ...) \
   logger->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::info, __VA_ARGS__)
-#define log_warn(logger, ...)                                                                                          \
+#define log_warn(logger, ...) \
   logger->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::warn, __VA_ARGS__)
-#define log_error(logger, ...)                                                                                         \
+#define log_error(logger, ...) \
   logger->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::err, __VA_ARGS__)
 
 /* These ones lock a mutex */
-#define dbg_trace(...)                                                                                                 \
+#define dbg_trace(...) \
   spdlog::get("console")->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::trace, __VA_ARGS__)
-#define dbg_dbg(...)                                                                                                   \
+#define dbg_dbg(...) \
   spdlog::get("console")->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::debug, __VA_ARGS__)
-#define dbg_info(...)                                                                                                  \
+#define dbg_info(...) \
   spdlog::get("console")->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::info, __VA_ARGS__)
-#define dbg_warn(...)                                                                                                  \
+#define dbg_warn(...) \
   spdlog::get("console")->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::warn, __VA_ARGS__)
-#define dbg_err(...)                                                                                                   \
+#define dbg_err(...) \
   spdlog::get("console")->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::err, __VA_ARGS__)
-#define dbg_crit(...)                                                                                                  \
-  spdlog::get("console")->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::critical,         \
+#define dbg_crit(...)                                                                                          \
+  spdlog::get("console")->log(spdlog::source_loc{__FILE__, __LINE__, PRINT_FUNCTION}, spdlog::level::critical, \
                               __VA_ARGS__)
 
 #else

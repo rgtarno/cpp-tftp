@@ -7,10 +7,10 @@ class udp_connection
 {
 public:
   udp_connection();
-  udp_connection(const udp_connection &)            = delete;
-  udp_connection(udp_connection &&)                 = delete;
+  udp_connection(const udp_connection &) = delete;
+  udp_connection(udp_connection &&)      = delete;
   udp_connection &operator=(const udp_connection &) = delete;
-  udp_connection &operator=(udp_connection &&)      = delete;
+  udp_connection &operator=(udp_connection &&) = delete;
   ~udp_connection();
 
   void              bind(const std::string &ip_address, const uint16_t port_num);

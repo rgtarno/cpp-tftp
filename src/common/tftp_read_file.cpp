@@ -5,7 +5,8 @@
 #include "utils.hpp"
 
 //========================================================
-tftp_read_file::tftp_read_file() : _fd(NULL), _mode(tftp::mode_t::OCTET), _overflow_buffer{}
+tftp_read_file::tftp_read_file() :
+    _fd(NULL), _mode(tftp::mode_t::OCTET), _overflow_buffer{}
 {
 }
 

@@ -6,10 +6,10 @@ class timer
 {
 public:
   timer();
-  timer(const timer &)            = delete;
-  timer(timer &&)                 = delete;
+  timer(const timer &) = delete;
+  timer(timer &&)      = delete;
   timer &operator=(const timer &) = delete;
-  timer &operator=(timer &&)      = delete;
+  timer &operator=(timer &&) = delete;
   ~timer();
 
   void arm_timer(const time_t seconds);

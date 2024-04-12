@@ -18,11 +18,11 @@ class tftp_server_connection
 public:
   tftp_server_connection(const tftp::rw_packet_t &request, struct sockaddr_in &client_address);
   ~tftp_server_connection();
-  tftp_server_connection()                                          = delete;
-  tftp_server_connection(const tftp_server_connection &)            = delete;
-  tftp_server_connection(tftp_server_connection &&)                 = delete;
+  tftp_server_connection()                               = delete;
+  tftp_server_connection(const tftp_server_connection &) = delete;
+  tftp_server_connection(tftp_server_connection &&)      = delete;
   tftp_server_connection &operator=(const tftp_server_connection &) = delete;
-  tftp_server_connection &operator=(tftp_server_connection &&)      = delete;
+  tftp_server_connection &operator=(tftp_server_connection &&) = delete;
 
   int  sd() const;
   int  timer_fd() const;

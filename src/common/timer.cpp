@@ -8,7 +8,8 @@
 #include "utils.hpp"
 
 //========================================================
-timer::timer() : _fd(-1)
+timer::timer() :
+    _fd(-1)
 {
   _fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
   if (_fd < 0)

@@ -10,7 +10,7 @@ namespace
 {
   const char OCTET_MODE_STR[]    = "OCTET";
   const char NETASCII_MODE_STR[] = "NETASCII";
-};
+}; // namespace
 
 //========================================================
 std::vector<char> tftp::serialise_rw_packet(const rw_packet_t &packet)

@@ -15,7 +15,8 @@ public:
 
   struct request_t
   {
-    request_t(const tftp::rw_packet_t &req, const sockaddr_in cl) : request(req), client(cl){};
+    request_t(const tftp::rw_packet_t &req, const sockaddr_in cl) :
+        request(req), client(cl){};
     tftp::rw_packet_t request;
     sockaddr_in       client;
   };

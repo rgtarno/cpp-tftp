@@ -11,10 +11,10 @@ class tftp_read_file
 public:
   tftp_read_file();
   tftp_read_file(const std::string &filename, const tftp::mode_t mode);
-  tftp_read_file(const tftp_read_file &t)           = delete;
-  tftp_read_file(tftp_read_file &&t)                = delete;
+  tftp_read_file(const tftp_read_file &t) = delete;
+  tftp_read_file(tftp_read_file &&t)      = delete;
   tftp_read_file &operator=(const tftp_read_file &) = delete;
-  tftp_read_file &operator=(tftp_read_file &&)      = delete;
+  tftp_read_file &operator=(tftp_read_file &&) = delete;
   ~tftp_read_file();
 
   void open(const std::string &filename, const tftp::mode_t mode);

@@ -44,8 +44,10 @@ namespace tftp
 
   struct rw_packet_t
   {
-    rw_packet_t() : type(packet_t::READ), filename(""), mode(mode_t::OCTET), options{} {};
-    rw_packet_t(const std::string &f, const packet_t t, const mode_t m) : type(t), filename(f), mode(m), options{} {};
+    rw_packet_t() :
+        type(packet_t::READ), filename(""), mode(mode_t::OCTET), options{} {};
+    rw_packet_t(const std::string &f, const packet_t t, const mode_t m) :
+        type(t), filename(f), mode(m), options{} {};
     packet_t                                         type;
     std::string                                      filename;
     mode_t                                           mode;
@@ -54,26 +56,30 @@ namespace tftp
 
   struct oack_packet_t
   {
-    oack_packet_t() : options{} {};
+    oack_packet_t() :
+        options{} {};
     std::vector<std::pair<std::string, std::string>> options;
   };
 
   struct data_packet_t
   {
-    data_packet_t() : data{}, block_number(0){};
+    data_packet_t() :
+        data{}, block_number(0){};
     std::vector<char> data;
     uint16_t          block_number;
   };
 
   struct ack_packet_t
   {
-    explicit ack_packet_t(const uint16_t bn) : block_number(bn){};
+    explicit ack_packet_t(const uint16_t bn) :
+        block_number(bn){};
     uint16_t block_number;
   };
 
   struct error_packet_t
   {
-    error_packet_t() : error_msg(""), error_code(0){};
+    error_packet_t() :
+        error_msg(""), error_code(0){};
     error_packet_t(const error_t code, const std::string &msg) :
         error_msg(msg), error_code(static_cast<uint16_t>(code)){};
     std::string error_msg;

@@ -11,10 +11,10 @@ class tftp_write_file
 public:
   tftp_write_file();
   tftp_write_file(const std::string &filename, const tftp::mode_t mode);
-  tftp_write_file(const tftp_write_file &t)           = delete;
-  tftp_write_file(tftp_write_file &&t)                = delete;
+  tftp_write_file(const tftp_write_file &t) = delete;
+  tftp_write_file(tftp_write_file &&t)      = delete;
   tftp_write_file &operator=(const tftp_write_file &) = delete;
-  tftp_write_file &operator=(tftp_write_file &&)      = delete;
+  tftp_write_file &operator=(tftp_write_file &&) = delete;
   ~tftp_write_file();
 
   void open(const std::string &filename, const tftp::mode_t mode);

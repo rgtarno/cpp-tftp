@@ -33,13 +33,12 @@ SERVER_OBJECTS:=$(SERVER_SRCS:%.cpp=$(OBJ_DIR)/%.o)
 TEST_SRCS := $(wildcard src/tests/*.cpp) $(COMMON_SRCS)
 TEST_OBJECTS:=$(TEST_SRCS:%.cpp=$(OBJ_DIR)/%.o)
 
+all: server client
+
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
 	@$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
 	@echo "Compiled: $@"
-
-
-all: server client
 
 $(APP_DIR)/$(CLIENT): $(CLIENT_OBJECTS)
 	@mkdir -p $(@D)
@@ -56,7 +55,6 @@ $(APP_DIR)/$(TEST_BIN): $(TEST_OBJECTS)
 	@$(CXX) $(CXXFLAGS) $(INCLUDE) -o $@ $^ $(LDLAGS)
 	@echo  "\033[32mBUILT: $@\033[0m"
 
-# Rules
 build:
 	@mkdir -p $(APP_DIR)
 	@mkdir -p $(OBJ_DIR)
@@ -70,11 +68,11 @@ tests: $(APP_DIR)/$(TEST_BIN)
 clean:
 	-@rm -rvf $(BUILD)
 
+format:
+	clang-format-13 -i --style=file $(shell find src -name *.cpp)
+	clang-format-13 -i --style=file $(shell find src -name *.hpp)
+
 client: build $(APP_DIR)/$(CLIENT)
 server: build $(APP_DIR)/$(SERVER)
 
-all: server client
-
-.PHONY:
-
-
+.PHONY: clean format server client tests 

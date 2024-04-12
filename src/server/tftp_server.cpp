@@ -1,10 +1,10 @@
-#include "tftp_server.hpp"
+#include "server/tftp_server.hpp"
 
 #include <sys/epoll.h>
 #include <unistd.h>
 
-#include "debug_macros.hpp"
-#include "utils.hpp"
+#include "common/debug_macros.hpp"
+#include "common/utils.hpp"
 
 //========================================================
 tftp_server::tftp_server(const std::string &server_root, const std::string &local_interface, const size_t max_clients) :

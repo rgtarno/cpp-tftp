@@ -1,5 +1,5 @@
 
-#include "udp_connection.hpp"
+#include "common/udp_connection.hpp"
 
 #include <arpa/inet.h>
 #include <fcntl.h>
@@ -9,8 +9,8 @@
 #include <cstring>
 #include <stdexcept>
 
-#include "debug_macros.hpp"
-#include "utils.hpp"
+#include "common/debug_macros.hpp"
+#include "common/utils.hpp"
 
 //========================================================
 udp_connection::udp_connection() :

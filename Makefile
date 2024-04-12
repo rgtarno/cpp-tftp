@@ -11,7 +11,7 @@ VERSION?=release
 
 LDLAGS:=-lm -ldl -lpthread -lspdlog -lfmt
 CXXFLAGS:=-std=c++17 -Wall -Wextra -Werror -Wswitch-enum -Wshadow -Woverloaded-virtual -Wnull-dereference -Wformat=2 -DSPDLOG_COMPILED_LIB
-INCLUDE:=-Isrc/include/
+INCLUDE:=-Iinclude/
 
 ifeq ($(VERSION),release)
 CXXFLAGS+= -O2 -DNDEBUG -DRELEASE
@@ -70,7 +70,7 @@ clean:
 
 format:
 	clang-format-13 -i --style=file $(shell find src -name *.cpp)
-	clang-format-13 -i --style=file $(shell find src -name *.hpp)
+	clang-format-13 -i --style=file $(shell find include -name *.hpp)
 
 client: build $(APP_DIR)/$(CLIENT)
 server: build $(APP_DIR)/$(SERVER)

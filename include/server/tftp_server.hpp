@@ -4,8 +4,8 @@
 #include <list>
 #include <string>
 
-#include "tftp_connection_handler.hpp"
-#include "tftp_server_connection.hpp"
+#include "server/tftp_connection_handler.hpp"
+#include "server/tftp_server_connection.hpp"
 
 class tftp_server
 {

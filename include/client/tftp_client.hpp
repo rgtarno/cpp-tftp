@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "tftp.hpp"
-#include "udp_connection.hpp"
+#include "common/tftp.hpp"
+#include "common/udp_connection.hpp"
 
 namespace tftp_client
 {

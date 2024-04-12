@@ -1,8 +1,8 @@
 
 #include <signal.h>
 
-#include "debug_macros.hpp"
-#include "tftp_server.hpp"
+#include "common/debug_macros.hpp"
+#include "server/tftp_server.hpp"
 
 static tftp_server *_pserver = nullptr;
 

@@ -1,13 +1,13 @@
 
-#include "tftp_client.hpp"
+#include "client/tftp_client.hpp"
 
 #include <filesystem>
 #include <fstream>
 #include <poll.h>
 
-#include "debug_macros.hpp"
-#include "tftp.hpp"
-#include "utils.hpp"
+#include "common/debug_macros.hpp"
+#include "common/tftp.hpp"
+#include "common/utils.hpp"
 
 //========================================================
 void tftp_client::get_file(const std::string &filename, const std::string &tftp_server, const tftp::mode_t mode,

@@ -1,6 +1,7 @@
-#include "tftp_connection_handler.hpp"
-#include "debug_macros.hpp"
-#include "utils.hpp"
+#include "server/tftp_connection_handler.hpp"
+
+#include "common/debug_macros.hpp"
+#include "common/utils.hpp"
 
 //========================================================
 tftp_connection_handler::tftp_connection_handler(const std::string &addr, const uint16_t port) :

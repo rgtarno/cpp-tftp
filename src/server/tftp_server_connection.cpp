@@ -1,10 +1,10 @@
-#include "tftp_server_connection.hpp"
+#include "server/tftp_server_connection.hpp"
 
 #include <filesystem>
 #include <netinet/in.h>
 
-#include "debug_macros.hpp"
-#include "utils.hpp"
+#include "common/debug_macros.hpp"
+#include "common/utils.hpp"
 
 namespace
 {

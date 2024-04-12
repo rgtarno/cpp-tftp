@@ -1,10 +1,10 @@
 
-#include "tftp.hpp"
+#include "common/tftp.hpp"
 
 #include <algorithm>
 #include <cstring>
 
-#include "utils.hpp"
+#include "common/utils.hpp"
 
 namespace
 {

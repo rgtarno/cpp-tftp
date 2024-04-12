@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "tftp.hpp"
-#include "udp_connection.hpp"
+#include "common/tftp.hpp"
+#include "common/udp_connection.hpp"
 
 class tftp_connection_handler
 {

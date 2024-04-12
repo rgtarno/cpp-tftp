@@ -1,8 +1,8 @@
-#include "tftp_read_file.hpp"
+#include "common/tftp_read_file.hpp"
 
 #include <cassert>
 
-#include "utils.hpp"
+#include "common/utils.hpp"
 
 //========================================================
 tftp_read_file::tftp_read_file() :

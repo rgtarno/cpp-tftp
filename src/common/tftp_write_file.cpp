@@ -1,8 +1,8 @@
-#include "tftp_write_file.hpp"
+#include "common/tftp_write_file.hpp"
 
 #include <cassert>
 
-#include "utils.hpp"
+#include "common/utils.hpp"
 
 //========================================================
 tftp_write_file::tftp_write_file() :

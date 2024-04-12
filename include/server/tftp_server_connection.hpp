@@ -7,11 +7,11 @@
 
 #include <spdlog/logger.h>
 
-#include "tftp.hpp"
-#include "tftp_read_file.hpp"
-#include "tftp_write_file.hpp"
-#include "timer.hpp"
-#include "udp_connection.hpp"
+#include "common/tftp.hpp"
+#include "common/tftp_read_file.hpp"
+#include "common/tftp_write_file.hpp"
+#include "common/timer.hpp"
+#include "common/udp_connection.hpp"
 
 class tftp_server_connection
 {

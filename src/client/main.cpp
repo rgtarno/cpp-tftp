@@ -4,9 +4,9 @@
 #include <signal.h>
 #include <string>
 
-#include "debug_macros.hpp"
-#include "tftp.hpp"
-#include "tftp_client.hpp"
+#include "common/debug_macros.hpp"
+#include "common/tftp.hpp"
+#include "client/tftp_client.hpp"
 
 //==========================================================
 void sig_handler(int signum)

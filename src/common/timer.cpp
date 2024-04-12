@@ -1,11 +1,12 @@
 
-#include "timer.hpp"
+#include "common/timer.hpp"
+
 #include <stdint.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
 
-#include "debug_macros.hpp"
-#include "utils.hpp"
+#include "common/debug_macros.hpp"
+#include "common/utils.hpp"
 
 //========================================================
 timer::timer() :

@@ -7,12 +7,12 @@
 #include "common/utils.hpp"
 
 //========================================================
-tftp_server::tftp_server(const std::string &server_root, const std::string &local_interface, const size_t max_clients) :
+tftp_server::tftp_server(const std::string &server_root, const std::string &local_interface, const int port_num, const size_t max_clients) :
     _server_root(server_root),
     _epoll_fd(-1),
     _max_clients(max_clients),
     _exit_requested(false),
-    _conn_handler((local_interface.empty() ? "0.0.0.0" : local_interface), 69),
+    _conn_handler((local_interface.empty() ? "0.0.0.0" : local_interface), port_num),
     _client_connections{}
 {
   if (chdir(server_root.c_str()) < 0)

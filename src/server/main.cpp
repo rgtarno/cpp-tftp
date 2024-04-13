@@ -22,14 +22,17 @@ int main(int argc, char **argv)
   }
 
   bool log_trace = false;
-  try
+  if (argc > 3)
   {
-    log_trace = std::stoul(argv[3]);
-  }
-  catch (const std::exception &err)
-  {
-    fmt::print(stderr, "Failed to parse DEBUG argument : {}\n", err.what());
-    return 1;
+    try
+    {
+      log_trace = std::stoul(argv[3]);
+    }
+    catch (const std::exception &err)
+    {
+      fmt::print(stderr, "Failed to parse DEBUG argument : {}\n", err.what());
+      return 1;
+    }
   }
   const std::string server_root(argv[1]);
   const std::string interface(argv[2]);
@@ -42,7 +45,7 @@ int main(int argc, char **argv)
 
   try
   {
-    tftp_server server(server_root, interface, 100);
+    tftp_server server(server_root, interface, 69, 100);
     _pserver = &server;
 
     dbg_trace("Starting server");
@@ -87,7 +90,7 @@ void print_usage(char *argv0)
 {
   fmt::print(stderr, "Usage: {} [SERVER_ROOT] [INTERFACE] [DEBUG]\n", argv0);
   fmt::print(stderr, "\tSERVER_ROOT: (Required) Path to a directory from which to serve / receive files\n");
-  fmt::print(stderr, "\tINTERFACE:   (Required) Local ip address to bind to (0.0.0.0 for any)\n");
+  fmt::print(stderr, "\tINTERFACE:   (Required) Local ip address to bind to (0.0.0.0 for all)\n");
   fmt::print(stderr, "\tDEBUG:       (Optional) 1 to turn on debug and trace prints\n");
 }
 
@@ -101,11 +104,11 @@ int initialise_logger(const bool trace)
     if (trace)
     {
       spdlog::set_level(spdlog::level::trace);
+      dbg_dbg("Debug prints on");
     }
     else
     {
-      spdlog::set_level(spdlog::level::debug);
-      dbg_dbg("Debug prints on");
+      spdlog::set_level(spdlog::level::info);
     }
     dbg_dbg("Initialised log");
   }

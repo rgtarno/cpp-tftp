@@ -74,10 +74,10 @@ TEST(tftp_serdes_tests, rw_packet_with_1_options_pair)
   const std::string                    opt1_key = "option_one";
   const std::string                    opt1_val = "test value";
   const std::vector<std::vector<char>> strings  = {{0x00, 0x01},
-                                                    string_to_vector_null(filename),
-                                                    string_to_vector_null(mode),
-                                                    string_to_vector_null(opt1_key),
-                                                    string_to_vector_null(opt1_val)};
+                                                  string_to_vector_null(filename),
+                                                  string_to_vector_null(mode),
+                                                  string_to_vector_null(opt1_key),
+                                                  string_to_vector_null(opt1_val)};
   const std::vector<char>              payload  = join_vectors(strings);
 
   const auto packet = tftp::deserialise_rw_packet(payload);
@@ -108,15 +108,14 @@ TEST(tftp_serdes_tests, rw_packet_with_3_options_pair)
   const std::string                    opt3_key = "option_tree";
   const std::string                    opt3_val = "0xCAFEBABE";
   const std::vector<std::vector<char>> strings  = {{0x00, 0x01},
-                                                    string_to_vector_null(filename),
-                                                    string_to_vector_null(mode),
-                                                    string_to_vector_null(opt1_key),
-                                                    string_to_vector_null(opt1_val),
-                                                    string_to_vector_null(opt2_key),
-                                                    string_to_vector_null(opt2_val),
-                                                    string_to_vector_null(opt3_key),
-                                                    string_to_vector_null(opt3_val)
-                                                    };
+                                                  string_to_vector_null(filename),
+                                                  string_to_vector_null(mode),
+                                                  string_to_vector_null(opt1_key),
+                                                  string_to_vector_null(opt1_val),
+                                                  string_to_vector_null(opt2_key),
+                                                  string_to_vector_null(opt2_val),
+                                                  string_to_vector_null(opt3_key),
+                                                  string_to_vector_null(opt3_val)};
   const std::vector<char>              payload  = join_vectors(strings);
 
   const auto packet = tftp::deserialise_rw_packet(payload);

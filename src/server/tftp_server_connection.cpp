@@ -205,6 +205,10 @@ void tftp_server_connection::process_options(const tftp::rw_packet_t &request)
         log_error(_logger, "Failed to convert timeout value to int '{}' [{}]", opt.second, _client_str);
       }
     }
+    else
+    {
+      log_info(_logger, "Unsupported option '{}' [{}]", opt.first.c_str(), _client_str);
+    }
   }
 }
 
@@ -318,7 +322,7 @@ void tftp_server_connection::handle_read()
     if (ack_packet)
     {
       _timeout_count = 0;
-      if (ack_packet->block_number == (_block_number - 1))
+      if (ack_packet->block_number == (_block_number - 1)) // IE the client retransmitted
       {
         log_trace(
             _logger,

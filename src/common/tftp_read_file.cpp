@@ -14,11 +14,7 @@ tftp_read_file::tftp_read_file() :
 tftp_read_file::tftp_read_file(const std::string &filename, const tftp::mode_t mode) :
     _fd(NULL), _mode(mode), _overflow_buffer{}
 {
-  _fd = fopen(filename.c_str(), "r");
-  if (_fd == NULL)
-  {
-    throw std::runtime_error(utils::string_error(errno));
-  }
+  open(filename, mode);
 }
 
 //========================================================

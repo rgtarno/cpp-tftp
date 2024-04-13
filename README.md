@@ -13,6 +13,7 @@ This is a C++ implementation of the TFTP protocol, specifically, this repo imple
 
 1. spdlog
 2. fmtlib
+3. googletest (for tests only)
 
 ## Build
 
@@ -24,4 +25,10 @@ To build the server
 To build the client
 ```
   make client
+```
+
+## Run
+
+```
+./build/apps/tftp_server
 ```

@@ -4,9 +4,9 @@
 #include <signal.h>
 #include <string>
 
+#include "client/tftp_client.hpp"
 #include "common/debug_macros.hpp"
 #include "common/tftp.hpp"
-#include "client/tftp_client.hpp"
 
 //==========================================================
 void sig_handler(int signum)
@@ -21,7 +21,8 @@ void print_help(char *argv0)
   const char help_msg[] = R"({}: [OPTIONS] FILES...
   -h --host       : IP address of the TFTP server
   -i --interface  : IP address of the local interface to send requests from (optional)
-  -w --write      : Write files
+  -p --put        : Put files (default is get)
+  -v --verbose    : Enable verbose logging
 )";
   fmt::print(help_msg, argv0);
 }
@@ -34,8 +35,8 @@ int main(int argc, char **argv)
   signal(SIGHUP, sig_handler);
 
   auto err_logger = spdlog::stderr_color_mt("console");
-  spdlog::set_level(spdlog::level::warn);
-  dbg_info("Initialised log");
+  spdlog::set_level(spdlog::level::info);
+  dbg_trace("Initialised log");
 
   int verbose_flag = 0;
   int help_flag    = 0;
@@ -44,7 +45,7 @@ int main(int argc, char **argv)
   static struct option long_options[] = {/* These options set a flag. */
                                          {"verbose", no_argument, &verbose_flag, 1},
                                          {"help", no_argument, &help_flag, 1},
-                                         {"write", no_argument, &write_flag, 1},
+                                         {"put", no_argument, &write_flag, 1},
                                          /* These options don’t set a flag.
                                             We distinguish them by their indices. */
                                          {"host", required_argument, 0, 'h'},
@@ -60,14 +61,14 @@ int main(int argc, char **argv)
   {
     int option_index = 0;
 
-    int c = getopt_long(argc, argv, "vwh:i:t:", long_options, &option_index);
+    int c = getopt_long(argc, argv, "vph:i:t:", long_options, &option_index);
 
     if (c == -1)
       break;
 
     switch (c)
     {
-    case 'w': {
+    case 'p': {
       write_flag = 1;
       break;
     }
@@ -124,10 +125,12 @@ int main(int argc, char **argv)
       if (write_flag)
       {
         tftp_client::send_file(file, tftp_host, mode, local_interface);
+        dbg_info("Successfully sent file '{}'", file);
       }
       else
       {
         tftp_client::get_file(file, tftp_host, mode, local_interface);
+        dbg_info("Successfully received file '{}'", file);
       }
     }
   }
@@ -136,7 +139,5 @@ int main(int argc, char **argv)
     dbg_err("Failure : {}", err.what());
     return 1;
   }
-
-  dbg_trace("Exiting...");
   return 0;
 }

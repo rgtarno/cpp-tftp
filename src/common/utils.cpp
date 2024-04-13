@@ -72,7 +72,7 @@ std::vector<char> utils::netascii_to_native(const std::vector<char> &data)
       }
       else
       {
-          throw std::runtime_error("Invalid character sequence : EOL after CR");
+        throw std::runtime_error("Invalid character sequence : EOL after CR");
       }
     }
     else

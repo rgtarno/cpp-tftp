@@ -10,7 +10,7 @@
 class tftp_server
 {
 public:
-  tftp_server(const std::string &server_root, const std::string &local_interface, const size_t max_clients);
+  tftp_server(const std::string &server_root, const std::string &local_interface, const int port_num, const size_t max_clients);
   ~tftp_server();
 
   void start();

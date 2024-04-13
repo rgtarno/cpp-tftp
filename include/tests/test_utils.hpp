@@ -22,4 +22,4 @@ namespace test_utils
     ret.push_back(0);
     return ret;
   }
-}
+} // namespace test_utils

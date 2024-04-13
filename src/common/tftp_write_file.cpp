@@ -14,11 +14,7 @@ tftp_write_file::tftp_write_file() :
 tftp_write_file::tftp_write_file(const std::string &filename, const tftp::mode_t mode) :
     _fd(NULL), _mode(mode)
 {
-  _fd = fopen(filename.c_str(), "wb");
-  if (_fd == NULL)
-  {
-    throw std::runtime_error(utils::string_error(errno));
-  }
+  open(filename, mode);
 }
 
 //========================================================

@@ -10,14 +10,14 @@ APP_DIR:=$(BUILD)/apps
 VERSION?=release
 
 LDLAGS:=-lm -ldl -lpthread -lspdlog -lfmt
+TEST_LDLAGS:= $(LDLAGS) -lgtest_main -lgtest
 CXXFLAGS:=-std=c++17 -Wall -Wextra -Werror -Wswitch-enum -Wshadow -Woverloaded-virtual -Wnull-dereference -Wformat=2 -DSPDLOG_COMPILED_LIB
 INCLUDE:=-Iinclude/
 
 ifeq ($(VERSION),release)
 CXXFLAGS+= -O2 -DNDEBUG -DRELEASE
 else
-CXXFLAGS+= -ggdb -g -fsanitize=address,undefined
-LDLAGS+= -fsanitize=address,undefined
+CXXFLAGS+= -ggdb -g
 endif
  
 
@@ -52,7 +52,7 @@ $(APP_DIR)/$(SERVER): $(SERVER_OBJECTS)
 
 $(APP_DIR)/$(TEST_BIN): $(TEST_OBJECTS)
 	@mkdir -p $(@D)
-	@$(CXX) $(CXXFLAGS) $(INCLUDE) -o $@ $^ $(LDLAGS)
+	@$(CXX) $(CXXFLAGS) $(INCLUDE) -o $@ $^ $(TEST_LDLAGS)
 	@echo  "\033[32mBUILT: $@\033[0m"
 
 build:

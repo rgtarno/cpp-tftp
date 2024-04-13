@@ -64,6 +64,8 @@ std::optional<tftp::rw_packet_t> tftp::deserialise_rw_packet(const std::vector<c
     packet.options.push_back(std::make_pair(std::move(params.at(i)), std::move(params.at(i + 1))));
     std::transform(packet.options.back().first.begin(), packet.options.back().first.end(),
                    packet.options.back().first.begin(), ::toupper);
+    std::transform(packet.options.back().second.begin(), packet.options.back().second.end(),
+                   packet.options.back().second.begin(), ::toupper);
   }
   return packet;
 }

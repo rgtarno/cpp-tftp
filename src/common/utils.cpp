@@ -41,6 +41,7 @@ std::vector<char> utils::native_to_netascii(const std::vector<char> &data)
 std::vector<char> utils::netascii_to_native(const std::vector<char> &data)
 {
   const char CR = (char)0x0D;
+  const char LF = (char)0x0A;
 
   std::vector<char> ret;
   ret.reserve(data.size());
@@ -54,12 +55,24 @@ std::vector<char> utils::netascii_to_native(const std::vector<char> &data)
       if (std::next(iter) != data.cend())
       {
         const auto next = *std::next(iter);
-        if (next == 0) // CR NULL to CR
+        if (next == '\0') // CR NULL to CR
         {
           ret.push_back(*iter);
-          ++iter;
+          iter = std::next(iter);
         }
-        // CR LF to LF
+        else if (next == LF)
+        {
+          // CR LF to LF
+          // Skip the CR
+        }
+        else
+        {
+          throw std::runtime_error("Invalid character sequence : CR with no LF or NULL");
+        }
+      }
+      else
+      {
+          throw std::runtime_error("Invalid character sequence : EOL after CR");
       }
     }
     else
@@ -67,10 +80,7 @@ std::vector<char> utils::netascii_to_native(const std::vector<char> &data)
       ret.push_back(*iter);
     }
 
-    if (std::next(iter) != data.cend())
-    {
-      ++iter;
-    }
+    ++iter;
   }
 
   return ret;

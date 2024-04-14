@@ -10,7 +10,7 @@
 #include "common/utils.hpp"
 
 //========================================================
-void tftp_client::get_file(const std::string &filename, const std::string &tftp_server, const tftp::mode_t mode,
+bool tftp_client::get_file(const std::string &filename, const std::string &tftp_server, const tftp::mode_t mode,
                            const std::string &local_interface)
 {
   udp_connection udp;
@@ -31,7 +31,7 @@ void tftp_client::get_file(const std::string &filename, const std::string &tftp_
   if ((poll(&pfd, 1, 3000) <= 0) || !(pfd.revents & POLLOUT))
   {
     dbg_warn("Did not receive reply to read request");
-    return;
+    return false;
   }
 
   std::string addr;
@@ -52,13 +52,13 @@ void tftp_client::get_file(const std::string &filename, const std::string &tftp_
     {
       dbg_err("Unknown error : Failed to parse packet");
     }
-    return;
+    return false;
   }
 
   if (data_packet->block_number != block_number)
   {
     dbg_err("Received unexpected block number from 1st data package ({})", data_packet->block_number);
-    return;
+    return false;
   }
   dbg_trace("Received block {} of {} bytes", data_packet->block_number, data_packet->data.size());
 
@@ -67,7 +67,7 @@ void tftp_client::get_file(const std::string &filename, const std::string &tftp_
   if (!out_file)
   {
     dbg_err("Failed to open file for writing '{}'", out_filename.c_str());
-    return;
+    return false;
   }
 
   dbg_trace("Server tid is {}", server_tid);
@@ -100,7 +100,7 @@ void tftp_client::get_file(const std::string &filename, const std::string &tftp_
     if (!poll(&pfd, 1, 3000) || !(pfd.revents & POLLOUT))
     {
       dbg_warn("Timed out waiting for reply, expected block number {}", block_number);
-      return;
+      return false;
     }
 
     data_packet = tftp::deserialise_data_packet(udp.recv(tftp::DATA_PKT_MAX_SIZE));
@@ -108,20 +108,21 @@ void tftp_client::get_file(const std::string &filename, const std::string &tftp_
     if (!data_packet)
     {
       dbg_err("Failed to parse data packet at block number {}", block_number);
-      return;
+      return false;
     }
 
     if (data_packet->block_number != block_number)
     {
       dbg_err("Received unexpected block number ({}) expected {}", data_packet->block_number, block_number);
-      return;
+      return false;
     }
     dbg_trace("Received block {} of {} bytes", data_packet->block_number, data_packet->data.size());
   }
+  return true;
 }
 
 //========================================================
-void tftp_client::send_file(const std::string &filename, const std::string &tftp_server, const tftp::mode_t mode,
+bool tftp_client::send_file(const std::string &filename, const std::string &tftp_server, const tftp::mode_t mode,
                             const std::string &local_interface)
 {
   udp_connection udp;
@@ -142,7 +143,7 @@ void tftp_client::send_file(const std::string &filename, const std::string &tftp
   if (!poll(&pfd, 1, 3000) || !(pfd.revents & POLLOUT))
   {
     dbg_warn("Did not receive reply to write request");
-    return;
+    return false;
   }
 
   std::string addr;
@@ -161,13 +162,13 @@ void tftp_client::send_file(const std::string &filename, const std::string &tftp
     {
       dbg_err("Unknown error : Failed to parse packet");
     }
-    return;
+    return false;
   }
 
   if (ack_packet->block_number != block_number)
   {
     dbg_err("Received unexpected block number ({}) expected {}", ack_packet->block_number, block_number);
-    return;
+    return false;
   }
   ++block_number;
 
@@ -182,7 +183,7 @@ void tftp_client::send_file(const std::string &filename, const std::string &tftp
   if (!in_file)
   {
     dbg_err("Failed to open file for reading '{}'", filename);
-    return;
+    return false;
   }
 
   // Pre read in first block
@@ -190,7 +191,7 @@ void tftp_client::send_file(const std::string &filename, const std::string &tftp
   if (!in_file)
   {
     dbg_err("Read error occured on file '{}'", filename);
-    return;
+    return false;
   }
   data_packet.data.resize(in_file.gcount());
 
@@ -221,7 +222,7 @@ void tftp_client::send_file(const std::string &filename, const std::string &tftp
     if (!in_file && !in_file.eof())
     {
       dbg_err("Read error occured on file '{}'", filename);
-      return;
+      return false;
     }
     data_packet.data.resize(in_file.gcount());
 
@@ -234,20 +235,21 @@ void tftp_client::send_file(const std::string &filename, const std::string &tftp
     if (!poll(&pfd, 1, 3000) || !(pfd.revents & POLLOUT))
     {
       dbg_warn("Timed out waiting for reply, expected block number {}", block_number);
-      return;
+      return false;
     }
 
     ack_packet = tftp::deserialise_ack_packet(udp.recv(tftp::ACK_PKT_MAX_SIZE));
     if (!ack_packet)
     {
       dbg_err("Failed to parse ack packet at block number {}", block_number);
-      return;
+      return false;
     }
 
     if (data_packet.block_number != block_number)
     {
       dbg_err("Received unexpected block number ({}) expected {}", data_packet.block_number, block_number);
-      return;
+      return false;
     }
   }
+  return true;
 }

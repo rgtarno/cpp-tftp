@@ -9,6 +9,8 @@ This is a C++ implementation of the TFTP protocol, specifically, this repo imple
 
 ***
 
+This was written as a learing exercise and you should probably not use this in the real world.
+
 ## Dependencies
 
 1. spdlog

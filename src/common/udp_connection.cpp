@@ -26,6 +26,7 @@ udp_connection::udp_connection() :
   const int enable = 1;
   if (setsockopt(_sd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
   {
+    close(_sd);
     throw std::runtime_error(utils::string_error(errno));
   }
 }
